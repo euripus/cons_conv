@@ -1,0 +1,6 @@
+*.user
+*.user.*
+/obj
+/bin
+/lib
+/include

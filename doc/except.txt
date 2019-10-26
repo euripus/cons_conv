@@ -1,0 +1,5 @@
+links:
+    https://msdn.microsoft.com/en-us/library/hh279678.aspx
+    http://www.boost.org/community/error_handling.html
+    https://habrahabr.ru/company/smart_soft/blog/234239/
+

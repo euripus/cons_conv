@@ -1,0 +1,36 @@
+Txt file specification
+
+.txt.msh
+meshes
+    mesh
+        vertices
+        weights
+        bbox                        # min.x min.y min.z max.x max.y max.z
+        material
+        vtx        <>               # vertex    x  y  z
+        vnr        <>               # normal    x  y  z
+        vtg        <>               # tangent   x  y  z
+        vbt        <>               # bitangent x  y  z
+        tex_channels
+            tx0    <>               # x  y
+            tx1    <>               # x  y                                              (extra channels optional)
+        triangles
+            fcx    <>               # v1 v2 v3
+        wgi        <>               # end_idx_in_weights_vec        # end index for     (optional)
+                                                                    # current vertex
+                                                                    # in weights vector
+        wgh        <>               # jnt_ind  weight               # weights vector    (optional)
+bones                                                               # Skeleton. One     (optional)
+                                                                    # per mesh         
+    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name
+
+    
+.txt.anm
+bones
+    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name                    (dublicate from .txt.msh)
+frames
+framerate
+    frame
+    bbox                            # min.x min.y min.z max.x max.y max.z
+    jtr            <>               # q.x q.y q.z q.w tr.x tr.y. tr.z
+
