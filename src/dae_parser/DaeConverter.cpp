@@ -588,7 +588,7 @@ struct CurrVertexData
     glm::vec3              bitangent    = glm::vec3{0.0f};
     bool                   is_color     = {false};
     glm::vec3              color        = glm::vec3{0.0f};
-    std::vector<glm::vec2> tex_coords   = {};   // Required
+    std::vector<glm::vec2> tex_coords   = {};   // 0 Required
 };
 
 void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
