@@ -602,7 +602,17 @@ void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
         msh.bitangent.push_back(vd.bitangent);
     if(vd.is_color)
         msh.color.push_back(vd.color);
-    msh.tex_coords.push_back(vd.tex_coords);
+	
+	// first
+	if(vd.tex_coords.size() != msh.tex_coords.size())
+	{
+		msh.tex_coords.clean();
+		msh.tex_coords.resize(vd.tex_coords.size());
+		//for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
+		//	msh.tex_coords.push_back({});
+	}	
+	for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
+			msh.tex_coords[i].push_back(vd.tex_coords[i]);
 }
 
 bool FindSimilarVertex(const CurrVertexData & vd, const InternalData::SubMesh & msh, unsigned int * foundInd)
