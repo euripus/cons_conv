@@ -340,8 +340,8 @@ void DaeConverter::ProcessMeshes()
             {
                 std::string skinId = curMesh->_daeNode->_instances[ins]._url;
                 auto        it     = std::find_if(_parser._controllers->_skinControllers.begin(),
-                                       _parser._controllers->_skinControllers.end(),
-                                       [&skinId](const DaeSkin & skn) -> bool { return skn._id == skinId; });
+                                                  _parser._controllers->_skinControllers.end(),
+                                                  [&skinId](const DaeSkin & skn) -> bool { return skn._id == skinId; });
 
                 if(it != _parser._controllers->_skinControllers.end())
                 {
@@ -602,17 +602,17 @@ void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
         msh.bitangent.push_back(vd.bitangent);
     if(vd.is_color)
         msh.color.push_back(vd.color);
-	
-	// first
-	if(vd.tex_coords.size() != msh.tex_coords.size())
-	{
-		msh.tex_coords.clean();
-		msh.tex_coords.resize(vd.tex_coords.size());
-		//for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
-		//	msh.tex_coords.push_back({});
-	}	
-	for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
-			msh.tex_coords[i].push_back(vd.tex_coords[i]);
+
+    // first
+    if(vd.tex_coords.size() != msh.tex_coords.size())
+    {
+        msh.tex_coords.clear();
+        msh.tex_coords.resize(vd.tex_coords.size());
+        // for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
+        //	msh.tex_coords.push_back({});
+    }
+    for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
+        msh.tex_coords[i].push_back(vd.tex_coords[i]);
 }
 
 bool FindSimilarVertex(const CurrVertexData & vd, const InternalData::SubMesh & msh, unsigned int * foundInd)
@@ -633,7 +633,7 @@ bool FindSimilarVertex(const CurrVertexData & vd, const InternalData::SubMesh & 
 
         for(unsigned int j = 0; j < vd.tex_coords.size(); j++)
         {
-            isEqual = isEqual && VecEqual(vd.tex_coords[j], msh.tex_coords[i][j]);
+            isEqual = isEqual && VecEqual(vd.tex_coords[j], msh.tex_coords[j][i]);
         }
 
         if(isEqual)

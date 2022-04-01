@@ -87,14 +87,15 @@ void TxtExporter::WriteFile(const std::string & basic_fname, const InternalData 
             });
 
             // Write tex coords
-            out << "tex_channels " << msh.tex_coords[0].size() << std::endl;
-            for(unsigned int i = 0; i < msh.tex_coords[0].size(); i++)
+            out << "tex_channels " << msh.tex_coords.size() << std::endl;
+            for(unsigned int i = 0; i < msh.tex_coords.size(); i++)
             {
                 std::stringstream ss;
                 ss << "tx" << i;
-                std::for_each(msh.tex_coords.begin(), msh.tex_coords.end(), [&out, &i, &ss](const auto & v) {
-                    out << ss.str() << " " << RoundEps(v[i].x) << " " << RoundEps(v[i].y) << std::endl;
-                });
+                std::for_each(
+                    msh.tex_coords[i].begin(), msh.tex_coords[i].end(), [&out, &ss](const auto & v) {
+                        out << ss.str() << " " << RoundEps(v.x) << " " << RoundEps(v.y) << std::endl;
+                    });
             }
 
             out << "triangles " << msh.indexes.size() / 3 << std::endl;

@@ -248,7 +248,7 @@ void InternalData::CalculateNormals()
 // section 7.8.3
 void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
 {
-    if(tex_channnel > meshes[0].tex_coords[0].size())
+    if(tex_channnel > meshes[0].tex_coords.size())
     {
         std::stringstream ss;
         ss << "Error: No necessary texture channel"
@@ -272,9 +272,9 @@ void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
             const glm::vec3 & v2 = mesh.pos[mesh.indexes[i + 1]];
             const glm::vec3 & v3 = mesh.pos[mesh.indexes[i + 2]];
 
-            const glm::vec2 & w1 = mesh.tex_coords[mesh.indexes[i + 0]][tex_channnel];
-            const glm::vec2 & w2 = mesh.tex_coords[mesh.indexes[i + 1]][tex_channnel];
-            const glm::vec2 & w3 = mesh.tex_coords[mesh.indexes[i + 2]][tex_channnel];
+            const glm::vec2 & w1 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 0]];
+            const glm::vec2 & w2 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 1]];
+            const glm::vec2 & w3 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 2]];
 
             float x1 = v2.x - v1.x;
             float x2 = v3.x - v1.x;

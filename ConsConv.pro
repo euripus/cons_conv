@@ -5,9 +5,20 @@ CONFIG -= qt
 
 #QMAKE_CXXFLAGS += -Weffc++
 
+CONFIG(release, debug|release) {
+    #This is a release build
+    DEFINES += NDEBUG
+    QMAKE_CXXFLAGS += -s
+} else {
+    #This is a debug build
+    DEFINES += DEBUG
+    TARGET = $$join(TARGET,,,_d)
+}
+
 DESTDIR = $$PWD/bin
 
 INCLUDEPATH += ./include
+
 LIBS += -L$$PWD/lib -lpugixml -lboost_program_options
 
 SOURCES += \
