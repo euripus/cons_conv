@@ -87,12 +87,13 @@ struct CurrObjVertexData
 
 void PushVertexData(InternalData::SubMesh & msh, const CurrObjVertexData & vd)
 {
+    if(msh.tex_coords.empty())
+        msh.tex_coords.resize(1);
+
     msh.pos.push_back(vd.pos);
     if(vd.is_normal)
         msh.normal.push_back(vd.nor);
-    std::vector<glm::vec2> vtex;
-    vtex.push_back(vd.tex);
-    msh.tex_coords.push_back(vtex);
+    msh.tex_coords[0].push_back(vd.tex);
 }
 
 bool FindSimilarVertex(const CurrObjVertexData & vd, const InternalData::SubMesh & msh,
@@ -105,7 +106,7 @@ bool FindSimilarVertex(const CurrObjVertexData & vd, const InternalData::SubMesh
         isEqual = VecEqual(vd.pos, msh.pos[i]);
         if(vd.is_normal)
             isEqual = isEqual && VecEqual(vd.nor, msh.normal[i]);
-        isEqual = isEqual && VecEqual(vd.tex, msh.tex_coords[i][0]);
+        isEqual = isEqual && VecEqual(vd.tex, msh.tex_coords[0][i]);
 
         if(isEqual)
         {

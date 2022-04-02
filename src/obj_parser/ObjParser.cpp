@@ -25,6 +25,7 @@ void ObjParser::Parse(const std::string & fname, const CmdLineOptions & cmd)
     std::string line;
     SubMesh     sm;
     bool        first = true;
+
     while(std::getline(in, line))
     {
         if(line.substr(0, 2) == "v ")

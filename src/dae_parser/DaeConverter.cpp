@@ -608,9 +608,8 @@ void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
     {
         msh.tex_coords.clear();
         msh.tex_coords.resize(vd.tex_coords.size());
-        // for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
-        //	msh.tex_coords.push_back({});
     }
+
     for(unsigned int i = 0; i < vd.tex_coords.size(); ++i)
         msh.tex_coords[i].push_back(vd.tex_coords[i]);
 }
