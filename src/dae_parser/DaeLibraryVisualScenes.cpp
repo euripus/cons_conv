@@ -60,7 +60,6 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
             trans._values[1] = std::strtof(str, &end);
             str              = end;
             trans._values[2] = std::strtof(str, &end);
-            str              = end;
 
             _transStack.push_back(trans);
         }
@@ -79,7 +78,6 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
             trans._values[2] = std::strtof(str, &end);
             str              = end;
             trans._values[3] = std::strtof(str, &end);
-            str              = end;
 
             _transStack.push_back(trans);
         }
@@ -96,7 +94,6 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
             trans._values[1] = std::strtof(str, &end);
             str              = end;
             trans._values[2] = std::strtof(str, &end);
-            str              = end;
 
             _transStack.push_back(trans);
         }
