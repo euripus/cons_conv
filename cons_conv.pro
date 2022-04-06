@@ -19,7 +19,17 @@ DESTDIR = $$PWD/bin
 
 INCLUDEPATH += ./include
 
-LIBS += -L$$PWD/lib -lpugixml -lboost_program_options
+LIBS += -L$$PWD/lib -lpugixml
+
+win32:{
+    INCLUDEPATH += d:/build/prj/external/libs/boost_1_77_0
+    LIBS += -Ld:/build/prj/external/libs/boost_1_77_0/stage/lib
+    LIBS += -lboost_program_options-mgw8-mt-d-x32-1_77
+    LIBS += -static-libgcc -static-libstdc++ -static -lpthread
+}
+unix:{
+    LIBS += -lboost_program_options
+}
 
 SOURCES += \
     src/dae_parser/DaeConverter.cpp \
