@@ -5,7 +5,7 @@
 #include "./dae_parser/DaeParser.h"
 #include "./obj_parser/ObjParser.h"
 
-Parser::FileType CheckFileExtension(const std::string & name)
+Parser::FileType CheckFileExtension(std::string const & name)
 {
     size_t len = name.length();
 
@@ -21,12 +21,14 @@ std::unique_ptr<Parser> Parser::GetParser(Parser::FileType ft)
 {
     switch(ft)
     {
-        case Parser::FileType::TYPE_DAE: {
-            return std::make_unique<DaeParser>();
-        }
-        case Parser::FileType::TYPE_OBJ: {
-            return std::make_unique<ObjParser>();
-        }
+        case Parser::FileType::TYPE_DAE:
+            {
+                return std::make_unique<DaeParser>();
+            }
+        case Parser::FileType::TYPE_OBJ:
+            {
+                return std::make_unique<ObjParser>();
+            }
     }
 
     throw std::runtime_error("Unknown filetype for parsing.");

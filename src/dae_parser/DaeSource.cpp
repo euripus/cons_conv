@@ -5,7 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 
-void DaeSource::Parse(const pugi::xml_node & src)
+void DaeSource::Parse(pugi::xml_node const & src)
 {
     bool isFloatArray = true;
     _paramsPerItem    = 1;
@@ -53,7 +53,7 @@ void DaeSource::Parse(const pugi::xml_node & src)
         _paramsPerItem = count / numItems;   //  equivalent accessor.stride
 
         // Parse data
-        const char * str = arrayNode.text().get();
+        char const * str = arrayNode.text().get();
         if(str == nullptr)
         {
             std::stringstream ss;

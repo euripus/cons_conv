@@ -6,7 +6,7 @@
 
 void ObjConverter::Convert() {}
 
-void ObjConverter::ReadMaterials(const std::string & fname, InternalData & rep) const
+void ObjConverter::ReadMaterials(std::string const & fname, InternalData & rep) const
 {
     std::ifstream in(fname, std::ios::in);
     if(!in)
@@ -85,7 +85,7 @@ struct CurrObjVertexData
     glm::vec2 tex       = glm::vec2{0.0f};
 };
 
-void PushVertexData(InternalData::SubMesh & msh, const CurrObjVertexData & vd)
+void PushVertexData(InternalData::SubMesh & msh, CurrObjVertexData const & vd)
 {
     if(msh.tex_coords.empty())
         msh.tex_coords.resize(1);
@@ -96,7 +96,7 @@ void PushVertexData(InternalData::SubMesh & msh, const CurrObjVertexData & vd)
     msh.tex_coords[0].push_back(vd.tex);
 }
 
-bool FindSimilarVertex(const CurrObjVertexData & vd, const InternalData::SubMesh & msh,
+bool FindSimilarVertex(CurrObjVertexData const & vd, InternalData::SubMesh const & msh,
                        unsigned int * foundInd)
 {
     for(unsigned int i = 0; i < msh.pos.size(); i++)
@@ -118,12 +118,12 @@ bool FindSimilarVertex(const CurrObjVertexData & vd, const InternalData::SubMesh
     return false;
 }
 
-void ObjConverter::ExportToInternal(InternalData & rep, const CmdLineOptions & cmd) const
+void ObjConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & cmd) const
 {
     if(cmd.material_export && !_parser._matlib.empty())
         ReadMaterials(_parser._matlib, rep);
 
-    for(const auto & msh : _parser._meshes)
+    for(auto const & msh : _parser._meshes)
     {
         InternalData::SubMesh sm;
         sm.material = msh._mat_name;

@@ -6,7 +6,7 @@
 /*******************************************************************************
  * DaeAnimation
  *******************************************************************************/
-DaeSource * DaeAnimation::FindSource(const std::string & id) const
+DaeSource * DaeAnimation::FindSource(std::string const & id) const
 {
     if(id.empty())
         return nullptr;
@@ -20,7 +20,7 @@ DaeSource * DaeAnimation::FindSource(const std::string & id) const
     return nullptr;
 }
 
-DaeSampler * DaeAnimation::FindAnimForTarget(const std::string & nodeId, int * transValuesIndex) const
+DaeSampler * DaeAnimation::FindAnimForTarget(std::string const & nodeId, int * transValuesIndex) const
 {
     if(nodeId.empty())
         return nullptr;
@@ -46,7 +46,7 @@ DaeSampler * DaeAnimation::FindAnimForTarget(const std::string & nodeId, int * t
     return nullptr;
 }
 
-void DaeAnimation::Parse(const pugi::xml_node & animNode, unsigned int & maxFrameCount, float & maxAnimTime)
+void DaeAnimation::Parse(pugi::xml_node const & animNode, unsigned int & maxFrameCount, float & maxAnimTime)
 {
     _id = animNode.attribute("id").value();
 
@@ -187,7 +187,7 @@ void DaeAnimation::Parse(const pugi::xml_node & animNode, unsigned int & maxFram
 /*******************************************************************************
  * DaeLibraryAnimations
  *******************************************************************************/
-void DaeLibraryAnimations::Parse(const pugi::xml_node & rootNode)
+void DaeLibraryAnimations::Parse(pugi::xml_node const & rootNode)
 {
     _maxFrameCount = 0;
 
@@ -202,7 +202,7 @@ void DaeLibraryAnimations::Parse(const pugi::xml_node & rootNode)
     }
 }
 
-DaeSampler * DaeLibraryAnimations::FindAnimForTarget(const std::string & nodeId, int * index) const
+DaeSampler * DaeLibraryAnimations::FindAnimForTarget(std::string const & nodeId, int * index) const
 {
     for(auto & anm : _animations)
     {

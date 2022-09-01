@@ -26,7 +26,7 @@ DaeParser::DaeParser() :
 
 DaeParser::~DaeParser() {}
 
-void DaeParser::Parse(const std::string & fname, const CmdLineOptions & cmd)
+void DaeParser::Parse(std::string const & fname, CmdLineOptions const & cmd)
 {
     pugi::xml_document     doc;
     pugi::xml_node         root, asset;
@@ -143,7 +143,7 @@ glm::mat4 GetConvertMatrix(DaeParser::UpAxis up)
     return mt;
 }
 
-glm::mat4 CreateDAEMatrix(const float * m)
+glm::mat4 CreateDAEMatrix(float const * m)
 {
     // glm::mat4 constructor assigned elements in column major order
     // matrices in COLLADA are written in row-major order to aid the human reader

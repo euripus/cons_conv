@@ -22,7 +22,7 @@ struct DaeEffect
         shininess  = 0.5f;
     }
 
-    bool Parse(const pugi::xml_node & effectNode)
+    bool Parse(pugi::xml_node const & effectNode)
     {
         id = effectNode.attribute("id").value();
         if(id == "")
@@ -147,7 +147,7 @@ struct DaeLibraryEffects
 {
     std::vector<DaeEffect> effects;
 
-    DaeEffect * FindEffect(const std::string & id)
+    DaeEffect * FindEffect(std::string const & id)
     {
         if(id == "")
             return nullptr;
@@ -161,7 +161,7 @@ struct DaeLibraryEffects
         return nullptr;
     }
 
-    void Parse(const pugi::xml_node & rootNode)
+    void Parse(pugi::xml_node const & rootNode)
     {
         pugi::xml_node node1 = rootNode.child("library_effects");
         if(node1.empty())

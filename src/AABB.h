@@ -52,11 +52,11 @@ public:
     inline bool operator==(const AABB & rhs) const { return _min == rhs._min && _max == rhs._max; }
     inline bool operator!=(const AABB & rhs) const { return _min != rhs._min || _max != rhs._max; }
 
-    const glm::vec3 & min() const { return _min; }
-    const glm::vec3 & max() const { return _max; }
+    glm::vec3 const & min() const { return _min; }
+    glm::vec3 const & max() const { return _max; }
 
     /** Build the bounding box to include the given coordinates. */
-    void buildBoundBox(const std::vector<glm::vec3> & positions)
+    void buildBoundBox(std::vector<glm::vec3> const & positions)
     {
         assert(positions.size() > 0);
 
@@ -88,7 +88,7 @@ public:
     }
 
     /** Transform this bounding box */
-    inline void transform(const glm::mat4 & matrix)
+    inline void transform(glm::mat4 const & matrix)
     {
         // http://dev.theomader.com/transform-bounding-boxes/
         glm::vec3 xa = glm::vec3(glm::column(matrix, 0)) * _min.x;
@@ -106,7 +106,7 @@ public:
 
     /** Expands the bounding box to include the given coordinate.
      * If the box is uninitialized, set its min and max extents to v. */
-    inline void expandBy(const glm::vec3 & v)
+    inline void expandBy(glm::vec3 const & v)
     {
         if(v.x < _min.x)
             _min.x = v.x;
@@ -160,7 +160,7 @@ public:
     }
 
     /** Returns true if this bounding box contains the specified coordinate. */
-    inline bool contains(const glm::vec3 & v) const
+    inline bool contains(glm::vec3 const & v) const
     {
         return (v.x >= _min.x && v.x <= _max.x) && (v.y >= _min.y && v.y <= _max.y)
                && (v.z >= _min.z && v.z <= _max.z);

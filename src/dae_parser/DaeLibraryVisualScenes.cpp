@@ -6,7 +6,7 @@
 /*******************************************************************************
  * DaeNode
  *******************************************************************************/
-void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
+void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
 {
     _parent = parent;
 
@@ -34,7 +34,7 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
         {
             trans._type = DaeTransformation::Type::MATRIX;
 
-            const char * str = node1.text().get();
+            char const * str = node1.text().get();
             if(str == nullptr)
                 continue;
             for(int i = 0; i < 16; ++i)
@@ -51,7 +51,7 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
         {
             trans._type = DaeTransformation::Type::TRANSLATION;
 
-            const char * str = node1.text().get();
+            char const * str = node1.text().get();
             char *       end;
             if(str == nullptr)
                 continue;
@@ -67,7 +67,7 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
         {
             trans._type = DaeTransformation::Type::ROTATION;
 
-            const char * str = node1.text().get();
+            char const * str = node1.text().get();
             char *       end;
             if(str == nullptr)
                 continue;
@@ -85,7 +85,7 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
         {
             trans._type = DaeTransformation::Type::SCALE;
 
-            const char * str = node1.text().get();
+            char const * str = node1.text().get();
             char *       end;
             if(str == nullptr)
                 continue;
@@ -173,7 +173,7 @@ void DaeNode::Parse(const pugi::xml_node & node, DaeNode * parent)
 /*******************************************************************************
  * DaeVisualScene
  *******************************************************************************/
-const DaeNode * DaeVisualScene::FindNode(const std::string & id) const
+DaeNode const * DaeVisualScene::FindNode(std::string const & id) const
 {
     for(auto & ptr : _nodes)
     {
@@ -184,7 +184,7 @@ const DaeNode * DaeVisualScene::FindNode(const std::string & id) const
     return nullptr;
 }
 
-void DaeVisualScene::Parse(const pugi::xml_node & visScene)
+void DaeVisualScene::Parse(pugi::xml_node const & visScene)
 {
     _id = visScene.attribute("id").value();
     if(_id.empty())
@@ -201,7 +201,7 @@ void DaeVisualScene::Parse(const pugi::xml_node & visScene)
 /*******************************************************************************
  * DaeVisualScenes
  *******************************************************************************/
-const DaeVisualScene * DaeLibraryVisualScenes::Find(const std::string & id) const
+DaeVisualScene const * DaeLibraryVisualScenes::Find(std::string const & id) const
 {
     for(auto & ptr : _scenes)
     {
@@ -212,7 +212,7 @@ const DaeVisualScene * DaeLibraryVisualScenes::Find(const std::string & id) cons
     return nullptr;
 }
 
-void DaeLibraryVisualScenes::Parse(const pugi::xml_node & root)
+void DaeLibraryVisualScenes::Parse(pugi::xml_node const & root)
 {
     pugi::xml_node node1 = root.child("library_visual_scenes");
     if(node1.empty())

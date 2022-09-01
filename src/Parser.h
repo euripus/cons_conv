@@ -19,12 +19,12 @@ public:
     Parser()          = default;
     virtual ~Parser() = default;
 
-    virtual void                       Parse(const std::string & fname, const CmdLineOptions & cmd) = 0;
+    virtual void                       Parse(std::string const & fname, CmdLineOptions const & cmd) = 0;
     virtual std::unique_ptr<Converter> GetConverter() const                                         = 0;
 
     static std::unique_ptr<Parser> GetParser(FileType ft);
 };
 
-Parser::FileType CheckFileExtension(const std::string & name);
+Parser::FileType CheckFileExtension(std::string const & name);
 
 #endif   // PARSER_H

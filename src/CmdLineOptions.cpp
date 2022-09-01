@@ -52,7 +52,7 @@ bool ParseCmdLine(int argc, char ** argv, CmdLineOptions & cmd) noexcept
                   vm);
             notify(vm);
         }
-        catch(const boost::program_options::error & e)
+        catch(boost::program_options::error const & e)
         {
             std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
             std::cerr << cmdline_options << std::endl;
@@ -65,7 +65,7 @@ bool ParseCmdLine(int argc, char ** argv, CmdLineOptions & cmd) noexcept
             return true;
         }
     }
-    catch(const std::exception & e)
+    catch(std::exception const & e)
     {
         std::cerr << "ERROR! Failed parsing commandline parameters" << std::endl;
         std::cerr << "\t" << e.what() << std::endl;

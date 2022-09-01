@@ -12,7 +12,7 @@ struct DaeSource
     std::vector<std::string> _stringArray;
     unsigned int             _paramsPerItem;
 
-    void Parse(const pugi::xml_node & src);
+    void Parse(pugi::xml_node const & src);
 };
 
 #endif   // DAESOURCE_H

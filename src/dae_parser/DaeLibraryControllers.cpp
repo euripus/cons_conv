@@ -6,9 +6,9 @@
 /*******************************************************************************
  * DaeSkin
  *******************************************************************************/
-void DaeSkin::Parse(const pugi::xml_node & skin)
+void DaeSkin::Parse(pugi::xml_node const & skin)
 {
-    auto Find = [&](const std::string & str) -> DaeSource * {
+    auto Find = [&](std::string const & str) -> DaeSource * {
         if(str.empty())
             return nullptr;
 
@@ -34,7 +34,7 @@ void DaeSkin::Parse(const pugi::xml_node & skin)
     if(node2.empty())
         return;
 
-    const char * str = node2.text().get();
+    char const * str = node2.text().get();
     if(str == nullptr)
         return;
     float mat4[16] = {0};
@@ -153,7 +153,7 @@ void DaeSkin::Parse(const pugi::xml_node & skin)
 /*******************************************************************************
  * DaeLibraryControllers
  *******************************************************************************/
-void DaeLibraryControllers::Parse(const pugi::xml_node & root)
+void DaeLibraryControllers::Parse(pugi::xml_node const & root)
 {
     pugi::xml_node node1 = root.child("library_controllers");
     if(node1.empty())

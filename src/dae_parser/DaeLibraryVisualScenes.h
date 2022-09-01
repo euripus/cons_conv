@@ -41,7 +41,7 @@ struct DaeNode
     std::vector<std::unique_ptr<DaeNode>> _children;
     std::vector<DaeInstance>              _instances;
 
-    void Parse(const pugi::xml_node & node, DaeNode * parent = nullptr);
+    void Parse(pugi::xml_node const & node, DaeNode * parent = nullptr);
 };
 
 struct DaeVisualScene
@@ -50,8 +50,8 @@ struct DaeVisualScene
     std::string          _name;
     std::vector<DaeNode> _nodes;
 
-    void            Parse(const pugi::xml_node & visScene);
-    const DaeNode * FindNode(const std::string & id) const;
+    void            Parse(pugi::xml_node const & visScene);
+    DaeNode const * FindNode(std::string const & id) const;
 };
 
 class DaeLibraryVisualScenes
@@ -59,8 +59,8 @@ class DaeLibraryVisualScenes
 public:
     std::vector<DaeVisualScene> _scenes;
 
-    void                   Parse(const pugi::xml_node & root);
-    const DaeVisualScene * Find(const std::string & id) const;
+    void                   Parse(pugi::xml_node const & root);
+    DaeVisualScene const * Find(std::string const & id) const;
 };
 
 #endif   // DAEVISUALSCENES_H

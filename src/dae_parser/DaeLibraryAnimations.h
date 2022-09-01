@@ -26,11 +26,11 @@ struct DaeAnimation
     std::vector<DaeChannel>   _channels;
     std::vector<DaeAnimation> _children;
 
-    void         Parse(const pugi::xml_node & animNode, unsigned int & maxFrameCount, float & maxAnimTime);
-    DaeSampler * FindAnimForTarget(const std::string & nodeId, int * transValuesIndex) const;
+    void         Parse(pugi::xml_node const & animNode, unsigned int & maxFrameCount, float & maxAnimTime);
+    DaeSampler * FindAnimForTarget(std::string const & nodeId, int * transValuesIndex) const;
 
 protected:
-    DaeSource * FindSource(const std::string & id) const;
+    DaeSource * FindSource(std::string const & id) const;
 };
 
 struct DaeLibraryAnimations
@@ -39,8 +39,8 @@ struct DaeLibraryAnimations
     unsigned int              _maxFrameCount;
     float                     _maxAnimTime;
 
-    void         Parse(const pugi::xml_node & rootNode);
-    DaeSampler * FindAnimForTarget(const std::string & nodeId, int * index) const;
+    void         Parse(pugi::xml_node const & rootNode);
+    DaeSampler * FindAnimForTarget(std::string const & nodeId, int * index) const;
 };
 
 #endif   // DAELIBRARYANIMATIONS_H

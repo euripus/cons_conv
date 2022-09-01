@@ -15,7 +15,7 @@ struct DaeVerticesSource
     std::string                      _posSourceId;
     std::vector<DaeSource>::iterator _posSourceIt;   // position source array
 
-    void Parse(const pugi::xml_node & verticesNode);
+    void Parse(pugi::xml_node const & verticesNode);
 };
 
 struct DaeGeometry
@@ -51,10 +51,10 @@ struct DaeGeometry
         std::vector<Input>            _attributes;
         std::vector<VertexAttributes> _triangles;   // every 3 form triangle in CCW mode
 
-        const Input & GetInput(Semantic sem) const
+        Input const & GetInput(Semantic sem) const
         {
             auto it = std::find_if(_attributes.begin(), _attributes.end(),
-                                   [&](const Input & ip) -> bool { return ip.semantic == sem; });
+                                   [&](Input const & ip) -> bool { return ip.semantic == sem; });
 
             if(it != _attributes.end())
                 return *it;
@@ -65,8 +65,8 @@ struct DaeGeometry
 
     std::vector<TriangleGroup> _meshes;
 
-    void            Parse(const pugi::xml_node & polylistNode);
-    static Semantic GetSemanticType(const char * str);
+    void            Parse(pugi::xml_node const & polylistNode);
+    static Semantic GetSemanticType(char const * str);
 };
 
 // mesh node abstraction
@@ -78,15 +78,15 @@ struct DaeMeshNode
     std::vector<DaeVerticesSource> _posSources;
     std::vector<DaeGeometry>       _triGroups;
 
-    void Parse(const pugi::xml_node & geo);
+    void Parse(pugi::xml_node const & geo);
     void CheckInputConsistency() const;
 };
 
 class DaeLibraryGeometries
 {
 public:
-    void                Parse(const pugi::xml_node & geo);
-    const DaeMeshNode * Find(const std::string & id) const;
+    void                Parse(pugi::xml_node const & geo);
+    DaeMeshNode const * Find(std::string const & id) const;
 
     std::vector<DaeMeshNode> _lib;
 };

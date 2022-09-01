@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 class _daeNode;
-glm::mat4 CreateTransformMatrix(const std::vector<DaeTransformation> & transStack)
+glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & transStack)
 {
     glm::mat4 mat(1.0), daeMat(1.0);
     glm::mat4 scale(1.0), rotate(1.0), trans(1.0);
@@ -25,23 +25,27 @@ glm::mat4 CreateTransformMatrix(const std::vector<DaeTransformation> & transStac
     {
         switch(tr._type)
         {
-            case DaeTransformation::Type::SCALE: {
-                scale = glm::scale(scale, glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
-                break;
-            }
-            case DaeTransformation::Type::ROTATION: {
-                rotate = glm::rotate(rotate, tr._values[3],
-                                     glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
-                break;
-            }
-            case DaeTransformation::Type::TRANSLATION: {
-                trans = glm::translate(trans, glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
-                break;
-            }
-            case DaeTransformation::Type::MATRIX: {
-                daeMat = CreateDAEMatrix(tr._values);
-                break;
-            }
+            case DaeTransformation::Type::SCALE:
+                {
+                    scale = glm::scale(scale, glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
+                    break;
+                }
+            case DaeTransformation::Type::ROTATION:
+                {
+                    rotate = glm::rotate(rotate, tr._values[3],
+                                         glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
+                    break;
+                }
+            case DaeTransformation::Type::TRANSLATION:
+                {
+                    trans = glm::translate(trans, glm::vec3(tr._values[0], tr._values[1], tr._values[2]));
+                    break;
+                }
+            case DaeTransformation::Type::MATRIX:
+                {
+                    daeMat = CreateDAEMatrix(tr._values);
+                    break;
+                }
         }
     }
 
@@ -52,7 +56,7 @@ glm::mat4 CreateTransformMatrix(const std::vector<DaeTransformation> & transStac
 /******************************************************************************
  *
  ******************************************************************************/
-DaeConverter::DaeConverter(const DaeParser & parser) : _parser(parser), _frameCount(0), _maxAnimTime(0.0f) {}
+DaeConverter::DaeConverter(DaeParser const & parser) : _parser(parser), _frameCount(0), _maxAnimTime(0.0f) {}
 
 void DaeConverter::Convert()
 {
@@ -71,7 +75,7 @@ void DaeConverter::Convert()
     }
 }
 
-void DaeConverter::ConvertScene(const DaeVisualScene & sc)
+void DaeConverter::ConvertScene(DaeVisualScene const & sc)
 {
     if(sc._nodes.empty())
     {
@@ -104,14 +108,14 @@ void DaeConverter::ConvertScene(const DaeVisualScene & sc)
         ProcessMeshes();
 }
 
-SceneNode * DaeConverter::ProcessNode(const DaeNode & node, SceneNode * parent, glm::mat4 transAccum,
-                                      const DaeVisualScene & sc, std::vector<glm::mat4> animTransAccum)
+SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 transAccum,
+                                      DaeVisualScene const & sc, std::vector<glm::mat4> animTransAccum)
 {
     // Note: animTransAccum is used for pure transformation nodes of Collada that are no joints or meshes
 
     if(node._reference)
     {
-        const DaeNode * nd = sc.FindNode(node._name);
+        DaeNode const * nd = sc.FindNode(node._name);
         if(nd)
             return ProcessNode(*nd, parent, transAccum, sc, animTransAccum);
         else
@@ -188,7 +192,7 @@ SceneNode * DaeConverter::ProcessNode(const DaeNode & node, SceneNode * parent, 
     return sceneNode;
 }
 
-glm::mat4 DaeConverter::GetNodeTransform(const DaeNode & node, uint32_t frame) const
+glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, uint32_t frame) const
 {
     int          trIndex = -1;
     glm::mat4    tr      = glm::mat4(1.0);
@@ -244,7 +248,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
 
 void DaeConverter::CalcAbsTransfMatrices()
 {
-    auto it = std::find_if(_joints.begin(), _joints.end(), [](const std::unique_ptr<JointNode> & nd) -> bool {
+    auto it = std::find_if(_joints.begin(), _joints.end(), [](std::unique_ptr<JointNode> const & nd) -> bool {
         return nd->_parent == nullptr;
     });
     if(it != _joints.end())
@@ -273,43 +277,51 @@ VertexData::Semantic ConverSemantic(DaeGeometry::Semantic sem)
 
     switch(sem)
     {
-        case DaeGeometry::Semantic::VERTEX: {
-            s = VertexData::Semantic::POSITION;
-            break;
-        }
-        case DaeGeometry::Semantic::BINORMAL: {
-            s = VertexData::Semantic::BINORMAL;
-            break;
-        }
-        case DaeGeometry::Semantic::COLOR: {
-            s = VertexData::Semantic::COLOR;
-            break;
-        }
-        case DaeGeometry::Semantic::NORMAL: {
-            s = VertexData::Semantic::NORMAL;
-            break;
-        }
-        case DaeGeometry::Semantic::TANGENT: {
-            s = VertexData::Semantic::TANGENT;
-            break;
-        }
-        case DaeGeometry::Semantic::TEXBINORMAL: {
-            s = VertexData::Semantic::TEXBINORMAL;
-            break;
-        }
-        case DaeGeometry::Semantic::TEXCOORD: {
-            s = VertexData::Semantic::TEXCOORD;
-            break;
-        }
-        case DaeGeometry::Semantic::TEXTANGENT: {
-            s = VertexData::Semantic::TEXTANGENT;
-            break;
-        }
+        case DaeGeometry::Semantic::VERTEX:
+            {
+                s = VertexData::Semantic::POSITION;
+                break;
+            }
+        case DaeGeometry::Semantic::BINORMAL:
+            {
+                s = VertexData::Semantic::BINORMAL;
+                break;
+            }
+        case DaeGeometry::Semantic::COLOR:
+            {
+                s = VertexData::Semantic::COLOR;
+                break;
+            }
+        case DaeGeometry::Semantic::NORMAL:
+            {
+                s = VertexData::Semantic::NORMAL;
+                break;
+            }
+        case DaeGeometry::Semantic::TANGENT:
+            {
+                s = VertexData::Semantic::TANGENT;
+                break;
+            }
+        case DaeGeometry::Semantic::TEXBINORMAL:
+            {
+                s = VertexData::Semantic::TEXBINORMAL;
+                break;
+            }
+        case DaeGeometry::Semantic::TEXCOORD:
+            {
+                s = VertexData::Semantic::TEXCOORD;
+                break;
+            }
+        case DaeGeometry::Semantic::TEXTANGENT:
+            {
+                s = VertexData::Semantic::TEXTANGENT;
+                break;
+            }
     }
     return s;
 }
 
-unsigned int DaeConverter::FindJointIndex(const std::string & name) const
+unsigned int DaeConverter::FindJointIndex(std::string const & name) const
 {
     unsigned int indx = 0;
 
@@ -341,7 +353,7 @@ void DaeConverter::ProcessMeshes()
                 std::string skinId = curMesh->_daeNode->_instances[ins]._url;
                 auto        it     = std::find_if(_parser._controllers->_skinControllers.begin(),
                                                   _parser._controllers->_skinControllers.end(),
-                                                  [&skinId](const DaeSkin & skn) -> bool { return skn._id == skinId; });
+                                                  [&skinId](DaeSkin const & skn) -> bool { return skn._id == skinId; });
 
                 if(it != _parser._controllers->_skinControllers.end())
                 {
@@ -373,7 +385,7 @@ void DaeConverter::ProcessMeshes()
                 }
             }
 
-            const DaeMeshNode *      geometry = _parser._geom->Find(geoSrc);
+            DaeMeshNode const *      geometry = _parser._geom->Find(geoSrc);
             std::vector<JointNode *> jointLookup;
 
             if(!geometry)
@@ -591,7 +603,7 @@ struct CurrVertexData
     std::vector<glm::vec2> tex_coords   = {};   // 0 Required
 };
 
-void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
+void PushVertexData(InternalData::SubMesh & msh, CurrVertexData const & vd)
 {
     msh.pos.push_back(vd.pos);
     if(vd.is_normal)
@@ -614,7 +626,7 @@ void PushVertexData(InternalData::SubMesh & msh, const CurrVertexData & vd)
         msh.tex_coords[i].push_back(vd.tex_coords[i]);
 }
 
-bool FindSimilarVertex(const CurrVertexData & vd, const InternalData::SubMesh & msh, unsigned int * foundInd)
+bool FindSimilarVertex(CurrVertexData const & vd, InternalData::SubMesh const & msh, unsigned int * foundInd)
 {
     for(unsigned int i = 0; i < msh.pos.size(); i++)
     {
@@ -659,7 +671,7 @@ InternalData::WeightsVec GetWeightsForVertex(VertexData::WeightsVec wvec)
     return wv;
 }
 
-void DaeConverter::ExportToInternal(InternalData & rep, const CmdLineOptions & cmd) const
+void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & cmd) const
 {
     assert(rep.meshes.empty());
 
@@ -688,33 +700,38 @@ void DaeConverter::ExportToInternal(InternalData & rep, const CmdLineOptions & c
                     {
                         switch(mesh->_vertices._sources_vec3[j]._semantic)
                         {
-                            case VertexData::Semantic::POSITION: {
-                                vd.pos    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
-                                pos_index = indx[j];
-                                break;
-                            }
-                            case VertexData::Semantic::NORMAL: {
-                                vd.is_normal = true;
-                                vd.normal    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
-                                break;
-                            }
-                            case VertexData::Semantic::COLOR: {
-                                vd.is_color = true;
-                                vd.color    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
-                                break;
-                            }
+                            case VertexData::Semantic::POSITION:
+                                {
+                                    vd.pos    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    pos_index = indx[j];
+                                    break;
+                                }
+                            case VertexData::Semantic::NORMAL:
+                                {
+                                    vd.is_normal = true;
+                                    vd.normal    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    break;
+                                }
+                            case VertexData::Semantic::COLOR:
+                                {
+                                    vd.is_color = true;
+                                    vd.color    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    break;
+                                }
                             case VertexData::Semantic::TANGENT:
-                            case VertexData::Semantic::TEXTANGENT: {
-                                vd.is_tangent = true;
-                                vd.tangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
-                                break;
-                            }
+                            case VertexData::Semantic::TEXTANGENT:
+                                {
+                                    vd.is_tangent = true;
+                                    vd.tangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    break;
+                                }
                             case VertexData::Semantic::BINORMAL:
-                            case VertexData::Semantic::TEXBINORMAL: {
-                                vd.is_bitangent = true;
-                                vd.bitangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
-                                break;
-                            }
+                            case VertexData::Semantic::TEXBINORMAL:
+                                {
+                                    vd.is_bitangent = true;
+                                    vd.bitangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    break;
+                                }
                         }
                     }
                     else

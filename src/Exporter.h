@@ -11,9 +11,9 @@ public:
     Exporter()          = default;
     virtual ~Exporter() = default;
 
-    virtual void WriteFile(const std::string & basic_fname, const InternalData & rep) const = 0;
+    virtual void WriteFile(std::string const & basic_fname, InternalData const & rep) const = 0;
 
-    static std::unique_ptr<Exporter> GetExporter(const CmdLineOptions & cmd);
+    static std::unique_ptr<Exporter> GetExporter(CmdLineOptions const & cmd);
 };
 
 #endif   // EXPORTER_H

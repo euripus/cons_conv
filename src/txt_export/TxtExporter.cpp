@@ -7,14 +7,14 @@
 #include <sstream>
 #include <stdexcept>
 
-TxtExporter::TxtExporter(const CmdLineOptions & cmd)
+TxtExporter::TxtExporter(CmdLineOptions const & cmd)
 {
     geometry  = cmd.geometry;
     animation = cmd.animation;
     material  = cmd.material_export;
 }
 
-void TxtExporter::WriteFile(const std::string & basic_fname, const InternalData & rep) const
+void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const & rep) const
 {
     std::string new_geom_fname = basic_fname.substr(0, basic_fname.find('.')) + ".txt.msh";
     std::string new_anim_fname = basic_fname.substr(0, basic_fname.find('.')) + ".txt.anm";
@@ -67,22 +67,22 @@ void TxtExporter::WriteFile(const std::string & basic_fname, const InternalData 
             out << "material " << msh.material << std::endl;
 
             // Write positions
-            std::for_each(msh.pos.begin(), msh.pos.end(), [&out](const glm::vec3 & v) {
+            std::for_each(msh.pos.begin(), msh.pos.end(), [&out](glm::vec3 const & v) {
                 out << "vtx " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
             });
 
             // Write normals
-            std::for_each(msh.normal.begin(), msh.normal.end(), [&out](const glm::vec3 & v) {
+            std::for_each(msh.normal.begin(), msh.normal.end(), [&out](glm::vec3 const & v) {
                 out << "vnr " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
             });
 
             // Write tangent
-            std::for_each(msh.tangent.begin(), msh.tangent.end(), [&out](const glm::vec3 & v) {
+            std::for_each(msh.tangent.begin(), msh.tangent.end(), [&out](glm::vec3 const & v) {
                 out << "vtg " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
             });
 
             // Write bitangent
-            std::for_each(msh.bitangent.begin(), msh.bitangent.end(), [&out](const glm::vec3 & v) {
+            std::for_each(msh.bitangent.begin(), msh.bitangent.end(), [&out](glm::vec3 const & v) {
                 out << "vbt " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
             });
 
@@ -93,7 +93,7 @@ void TxtExporter::WriteFile(const std::string & basic_fname, const InternalData 
                 std::stringstream ss;
                 ss << "tx" << i;
                 std::for_each(
-                    msh.tex_coords[i].begin(), msh.tex_coords[i].end(), [&out, &ss](const auto & v) {
+                    msh.tex_coords[i].begin(), msh.tex_coords[i].end(), [&out, &ss](auto const & v) {
                         out << ss.str() << " " << RoundEps(v.x) << " " << RoundEps(v.y) << std::endl;
                     });
             }

@@ -11,7 +11,7 @@ public:
     virtual ~Converter() {}
 
     virtual void Convert()                                                              = 0;
-    virtual void ExportToInternal(InternalData & rep, const CmdLineOptions & cmd) const = 0;
+    virtual void ExportToInternal(InternalData & rep, CmdLineOptions const & cmd) const = 0;
 };
 
 #endif   // CONVERTER_H

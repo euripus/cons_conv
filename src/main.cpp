@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
             auto exporter = Exporter::GetExporter(cmd);
             exporter->WriteFile(str, rep);
         }
-        catch(const std::exception & e)
+        catch(std::exception const & e)
         {
             std::cerr << "ERROR! Fail export file:\"" << str << "\"" << std::endl;
             std::cerr << "\tError msg: " << e.what() << std::endl;

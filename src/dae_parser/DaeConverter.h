@@ -70,7 +70,7 @@ struct SceneNode
     SceneNode *              _parent;
     std::vector<SceneNode *> _child;
 
-    const DaeNode * _daeNode;
+    DaeNode const * _daeNode;
 
     SceneNode() : _joint(false), _parent(nullptr), _daeNode(nullptr)
     {
@@ -103,7 +103,7 @@ struct JointNode : public SceneNode
 
 class DaeConverter : public Converter
 {
-    const DaeParser & _parser;
+    DaeParser const & _parser;
     uint32_t          _frameCount;
     float             _maxAnimTime;
 
@@ -111,22 +111,22 @@ class DaeConverter : public Converter
     std::vector<std::unique_ptr<JointNode>> _joints;
 
 protected:
-    void         ConvertScene(const DaeVisualScene & sc);
-    SceneNode *  ProcessNode(const DaeNode & node, SceneNode * parent, glm::mat4 transAccum,
-                             const DaeVisualScene & sc, std::vector<glm::mat4> animTransAccum);
-    glm::mat4    GetNodeTransform(const DaeNode & node, uint32_t frame) const;
+    void         ConvertScene(DaeVisualScene const & sc);
+    SceneNode *  ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 transAccum,
+                             DaeVisualScene const & sc, std::vector<glm::mat4> animTransAccum);
+    glm::mat4    GetNodeTransform(DaeNode const & node, uint32_t frame) const;
     void         CalcAbsTransfMatrices();
-    unsigned int FindJointIndex(const std::string & name) const;
+    unsigned int FindJointIndex(std::string const & name) const;
 
     void ProcessMeshes();
     void ProcessJoints();
 
 public:
-    DaeConverter(const DaeParser & parser);
+    DaeConverter(DaeParser const & parser);
     virtual ~DaeConverter() override = default;
 
     void Convert() override;
-    void ExportToInternal(InternalData & rep, const CmdLineOptions & cmd) const override;
+    void ExportToInternal(InternalData & rep, CmdLineOptions const & cmd) const override;
 };
 
 #endif   // DAECONVERTER_H

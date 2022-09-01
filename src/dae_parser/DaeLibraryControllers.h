@@ -24,14 +24,14 @@ struct DaeSkin
     DaeSource *             _bindMatArray;
     std::vector<WeightsVec> _vertWeights;
 
-    void Parse(const pugi::xml_node & skin);
+    void Parse(pugi::xml_node const & skin);
 };
 
 struct DaeLibraryControllers
 {
     std::vector<DaeSkin> _skinControllers;
 
-    void Parse(const pugi::xml_node & root);
+    void Parse(pugi::xml_node const & root);
 };
 
 #endif   // DAELIBRARYCONTROLLERS_H

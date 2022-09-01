@@ -55,7 +55,7 @@ struct InternalData
         std::string tex_name;
     };
 
-    static const int maxCacheSize = 16;
+    static int const maxCacheSize = 16;
 
     std::vector<JointNode> joints;
     std::vector<AABB>      bboxes;

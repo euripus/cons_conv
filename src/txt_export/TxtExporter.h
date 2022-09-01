@@ -10,9 +10,9 @@ class TxtExporter : public Exporter
     bool material;
 
 public:
-    TxtExporter(const CmdLineOptions & cmd);
+    TxtExporter(CmdLineOptions const & cmd);
 
-    void WriteFile(const std::string & basic_fname, const InternalData & rep) const override;
+    void WriteFile(std::string const & basic_fname, InternalData const & rep) const override;
 };
 
 #endif   // TXTEXPORTER_H

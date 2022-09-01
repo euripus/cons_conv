@@ -11,7 +11,7 @@ struct DaeImage
     std::string name;
     std::string fileName;
 
-    bool Parse(const pugi::xml_node & imageNode)
+    bool Parse(pugi::xml_node const & imageNode)
     {
         id = imageNode.attribute("id").value();
         if(id == "")
@@ -37,7 +37,7 @@ struct DaeLibraryImages
 {
     std::vector<DaeImage> images;
 
-    DaeImage * FindImage(const std::string & id)
+    DaeImage * FindImage(std::string const & id)
     {
         if(id == "")
             return nullptr;
@@ -51,7 +51,7 @@ struct DaeLibraryImages
         return nullptr;
     }
 
-    void Parse(const pugi::xml_node & rootNode)
+    void Parse(pugi::xml_node const & rootNode)
     {
         pugi::xml_node node1 = rootNode.child("library_images");
         if(node1.empty())

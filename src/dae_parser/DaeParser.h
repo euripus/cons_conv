@@ -26,7 +26,7 @@ public:
     DaeParser();
     virtual ~DaeParser() override;
 
-    void                       Parse(const std::string & fname, const CmdLineOptions & cmd) override;
+    void                       Parse(std::string const & fname, CmdLineOptions const & cmd) override;
     std::unique_ptr<Converter> GetConverter() const override;
 
 private:
@@ -44,7 +44,7 @@ private:
 };
 
 glm::mat4 GetConvertMatrix(DaeParser::UpAxis up);
-glm::mat4 CreateDAEMatrix(const float * mat);
+glm::mat4 CreateDAEMatrix(float const * mat);
 
 void RemoveGate(std::string & s);
 

@@ -167,7 +167,7 @@ void InternalData::OptimizeIndexOrder()
             }
 
             // Remove best face
-            faces.erase(std::find_if(faces.begin(), faces.end(), [&bestFace](const OptFace & fc) -> bool {
+            faces.erase(std::find_if(faces.begin(), faces.end(), [&bestFace](OptFace const & fc) -> bool {
                 return bestFace->id == fc.id;
             }));
 
@@ -268,13 +268,13 @@ void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
 
         for(unsigned int i = 0; i < mesh.indexes.size(); i += 3)
         {
-            const glm::vec3 & v1 = mesh.pos[mesh.indexes[i + 0]];
-            const glm::vec3 & v2 = mesh.pos[mesh.indexes[i + 1]];
-            const glm::vec3 & v3 = mesh.pos[mesh.indexes[i + 2]];
+            glm::vec3 const & v1 = mesh.pos[mesh.indexes[i + 0]];
+            glm::vec3 const & v2 = mesh.pos[mesh.indexes[i + 1]];
+            glm::vec3 const & v3 = mesh.pos[mesh.indexes[i + 2]];
 
-            const glm::vec2 & w1 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 0]];
-            const glm::vec2 & w2 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 1]];
-            const glm::vec2 & w3 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 2]];
+            glm::vec2 const & w1 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 0]];
+            glm::vec2 const & w2 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 1]];
+            glm::vec2 const & w3 = mesh.tex_coords[tex_channnel][mesh.indexes[i + 2]];
 
             float x1 = v2.x - v1.x;
             float x2 = v3.x - v1.x;
@@ -304,8 +304,8 @@ void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
         // Normalize tangent space basis
         for(unsigned int i = 0; i < mesh.pos.size(); i++)
         {
-            const glm::vec3 & n = mesh.normal[i];
-            const glm::vec3 & t = mesh.tangent[i];
+            glm::vec3 const & n = mesh.normal[i];
+            glm::vec3 const & t = mesh.tangent[i];
 
             mesh.tangent[i] = glm::normalize(t - n * glm::dot(n, t));
 

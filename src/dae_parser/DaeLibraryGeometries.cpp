@@ -5,9 +5,9 @@
 #include <sstream>
 #include <stdexcept>
 
-const DaeMeshNode * DaeLibraryGeometries::Find(const std::string & id) const
+DaeMeshNode const * DaeLibraryGeometries::Find(std::string const & id) const
 {
-    auto it = find_if(_lib.begin(), _lib.end(), [&](const DaeMeshNode & dg) { return dg._id == id; });
+    auto it = find_if(_lib.begin(), _lib.end(), [&](DaeMeshNode const & dg) { return dg._id == id; });
 
     if(it != _lib.end())
         return &(*it);
@@ -15,7 +15,7 @@ const DaeMeshNode * DaeLibraryGeometries::Find(const std::string & id) const
         return nullptr;
 }
 
-void DaeLibraryGeometries::Parse(const pugi::xml_node & geo)
+void DaeLibraryGeometries::Parse(pugi::xml_node const & geo)
 {
     pugi::xml_node libgeo = geo.child("library_geometries");
     if(libgeo.empty())
@@ -35,7 +35,7 @@ void DaeLibraryGeometries::Parse(const pugi::xml_node & geo)
     }
 }
 
-void DaeMeshNode::Parse(const pugi::xml_node & geo)
+void DaeMeshNode::Parse(pugi::xml_node const & geo)
 {
     pugi::xml_node node1 = geo.child("mesh");
     if(node1.empty())
@@ -73,7 +73,7 @@ void DaeMeshNode::Parse(const pugi::xml_node & geo)
         std::string posSourceId = _posSources.back()._posSourceId;
         _posSources.back()._posSourceIt =
             std::find_if(_sources.begin(), _sources.end(),
-                         [&posSourceId](const DaeSource & src) -> bool { return posSourceId == src._id; });
+                         [&posSourceId](DaeSource const & src) -> bool { return posSourceId == src._id; });
         if(_posSources.back()._posSourceIt == _sources.end())
         {
             std::stringstream ss;
@@ -101,7 +101,7 @@ void DaeMeshNode::Parse(const pugi::xml_node & geo)
                         attr.sourceIt = _sources.end();
                         attr.posSourceIt =
                             std::find_if(_posSources.begin(), _posSources.end(),
-                                         [sourceId = attr.sourceId](const DaeVerticesSource & vs) -> bool {
+                                         [sourceId = attr.sourceId](DaeVerticesSource const & vs) -> bool {
                                              return sourceId == vs._id;
                                          });
 
@@ -118,7 +118,7 @@ void DaeMeshNode::Parse(const pugi::xml_node & geo)
                         attr.posSourceIt = _posSources.end();
                         attr.sourceIt =
                             std::find_if(_sources.begin(), _sources.end(),
-                                         [sourceId = attr.sourceId](const DaeSource & vs) -> bool {
+                                         [sourceId = attr.sourceId](DaeSource const & vs) -> bool {
                                              return sourceId == vs._id;
                                          });
 
@@ -162,7 +162,7 @@ void DaeMeshNode::CheckInputConsistency() const
     }
 }
 
-DaeGeometry::Semantic DaeGeometry::GetSemanticType(const char * str)
+DaeGeometry::Semantic DaeGeometry::GetSemanticType(char const * str)
 {
     assert(str != nullptr);
 
@@ -189,7 +189,7 @@ DaeGeometry::Semantic DaeGeometry::GetSemanticType(const char * str)
     throw std::runtime_error(ss.str());
 }
 
-void DaeGeometry::Parse(const pugi::xml_node & polylistNode)
+void DaeGeometry::Parse(pugi::xml_node const & polylistNode)
 {
     enum class PrimType
     {
@@ -266,7 +266,7 @@ void DaeGeometry::Parse(const pugi::xml_node & polylistNode)
     // Form index list for submesh
 
     // Get vertex counts for polylists
-    const char * vcountStr = nullptr;
+    char const * vcountStr = nullptr;
     unsigned int num_verts = 0;
     if(primType == PrimType::Polylist)
     {
@@ -285,7 +285,7 @@ void DaeGeometry::Parse(const pugi::xml_node & polylistNode)
     //      and describes the front side of each polygon
     for(node1 = polylistNode.child("p"); node1; node1 = node1.next_sibling("p"))
     {
-        const char * str = node1.text().get();
+        char const * str = node1.text().get();
         if(str == nullptr)
         {
             std::stringstream ss;
@@ -358,7 +358,7 @@ void DaeGeometry::Parse(const pugi::xml_node & polylistNode)
     _meshes.push_back(std::move(sub_mesh));
 }
 
-void DaeVerticesSource::Parse(const pugi::xml_node & verticesNode)
+void DaeVerticesSource::Parse(pugi::xml_node const & verticesNode)
 {
     _id = verticesNode.attribute("id").value();
     if(_id.empty())

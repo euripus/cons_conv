@@ -20,7 +20,7 @@ struct DaeMaterial
         effect = nullptr;
     }
 
-    bool Parse(const pugi::xml_node & matNode)
+    bool Parse(pugi::xml_node const & matNode)
     {
         id   = matNode.attribute("id").value();
         name = matNode.attribute("name").value();
@@ -42,7 +42,7 @@ struct DaeLibraryMaterials
 {
     std::vector<DaeMaterial> materials;
 
-    DaeMaterial * FindMaterial(const std::string & id)
+    DaeMaterial * FindMaterial(std::string const & id)
     {
         if(id == "")
             return nullptr;
@@ -56,7 +56,7 @@ struct DaeLibraryMaterials
         return nullptr;
     }
 
-    void Parse(const pugi::xml_node & rootNode)
+    void Parse(pugi::xml_node const & rootNode)
     {
         pugi::xml_node node1 = rootNode.child("library_materials");
         if(node1.empty())

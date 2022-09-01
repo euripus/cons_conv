@@ -29,7 +29,7 @@ public:
     ObjParser()                   = default;
     virtual ~ObjParser() override = default;
 
-    void                       Parse(const std::string & fname, const CmdLineOptions & cmd) override;
+    void                       Parse(std::string const & fname, CmdLineOptions const & cmd) override;
     std::unique_ptr<Converter> GetConverter() const override;
 };
 

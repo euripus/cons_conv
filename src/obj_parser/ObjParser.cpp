@@ -11,7 +11,7 @@ std::unique_ptr<Converter> ObjParser::GetConverter() const
     return std::make_unique<ObjConverter>(*this);
 }
 
-void ObjParser::Parse(const std::string & fname, const CmdLineOptions & cmd)
+void ObjParser::Parse(std::string const & fname, CmdLineOptions const & cmd)
 {
     std::ifstream in(fname, std::ios::in);
     if(!in)
