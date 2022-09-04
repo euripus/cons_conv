@@ -9,9 +9,10 @@
 
 TxtExporter::TxtExporter(CmdLineOptions const & cmd)
 {
-    geometry  = cmd.geometry;
-    animation = cmd.animation;
-    material  = cmd.material_export;
+    geometry     = cmd.geometry;
+    animation    = cmd.animation;
+    material     = cmd.material_export;
+    rel_matrices = cmd.relative;
 }
 
 void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const & rep) const
@@ -39,7 +40,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
 
         for(unsigned int j = 0; j < rep.meshes.size(); ++j)
         {
-            auto msh = rep.meshes[j];
+            auto const & msh = rep.meshes[j];
 
             if(!msh.weights.empty())
             {
@@ -124,7 +125,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
         if(!rep.joints.empty())
         {
             out << "bones " << rep.joints.size() << std::endl;
-            for(auto & jnt : rep.joints)
+            for(auto const & jnt : rep.joints)
             {
                 out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << std::endl;
             }
@@ -143,7 +144,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             throw std::runtime_error(ss.str());
         }
 
-        for(auto & mtl : rep.materials)
+        for(auto const & mtl : rep.materials)
         {
             out << "Material name: " << mtl.name << std::endl;
 
@@ -180,7 +181,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
 
         // Write joints
         out << "bones " << rep.joints.size() << std::endl;
-        for(auto & jnt : rep.joints)
+        for(auto const & jnt : rep.joints)
         {
             out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << std::endl;
         }
@@ -200,7 +201,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             out << "bbox " << RoundEps(rep.bboxes[i].min().x) << " " << RoundEps(rep.bboxes[i].min().y) << " "
                 << RoundEps(rep.bboxes[i].min().z) << " " << RoundEps(rep.bboxes[i].max().x) << " "
                 << RoundEps(rep.bboxes[i].max().y) << " " << RoundEps(rep.bboxes[i].max().z) << std::endl;
-            for(auto & jnt : rep.joints)
+            for(auto const & jnt : rep.joints)
             {
                 out << "jtr " << RoundEps(jnt.rot[i].x) << " " << RoundEps(jnt.rot[i].y) << " "
                     << RoundEps(jnt.rot[i].z) << " " << RoundEps(jnt.rot[i].w) << " "

@@ -8,6 +8,7 @@ class TxtExporter : public Exporter
     bool geometry;
     bool animation;
     bool material;
+    bool rel_matrices;
 
 public:
     TxtExporter(CmdLineOptions const & cmd);

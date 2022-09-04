@@ -11,6 +11,7 @@ struct CmdLineOptions
     bool     material_export;     // export material
     bool     geometry;            // export geometry
     bool     animation;           // export animation
+    bool     relative;            // animation matrix type export
     uint32_t chan;                // texture channel for TBN calculating
 
     std::vector<std::string> file_list;
@@ -21,6 +22,7 @@ struct CmdLineOptions
         material_export(false),
         geometry(false),
         animation(false),
+        relative(false),
         chan(0)
     {}
 };

@@ -171,7 +171,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
     // Animation
     for(uint32_t i = 0; i < _frameCount; ++i)
     {
-        glm::mat4 mat = animTransAccum[i] * GetNodeTransform(node, i);
+        glm::mat4 mat = GetNodeTransform(node, i) * animTransAccum[i];
         if(sceneNode != nullptr)
         {
             sceneNode->_frames.push_back(mat);
@@ -230,7 +230,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 parTr = glm::mat4(1.0);
         if(parent != nullptr)
             parTr = parent->_aFrames[i];
-        nd->_aFrames.push_back(parTr * nd->_frames[i]);
+        nd->_aFrames.push_back(nd->_frames[i] * parTr);
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -799,12 +799,22 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
             {
                 for(uint16_t i = 0; i < _frameCount; i++)
                 {
-                    glm::mat4 jointTransf = joint->_aFrames[i] * joint->_invBindMat;
-                    glm::quat rot         = glm::quat_cast(jointTransf);
+                    exJoint.inverse_bind = joint->_invBindMat;
+                    // relative matrices
+                    glm::quat rot         = glm::quat_cast(joint->_frames[i]);
+                    rot                   = glm::normalize(rot);
+                    exJoint.r_rot.push_back(rot);
+
+                    glm::vec4 transf = glm::column(joint->_frames[i], 3);
+                    exJoint.r_trans.push_back(glm::vec3(transf));
+
+                    // absolute matrices
+                    glm::mat4 jointTransf = joint->_aFrames[i] * exJoint.inverse_bind;
+                    rot                   = glm::quat_cast(jointTransf);
                     rot                   = glm::normalize(rot);
                     exJoint.rot.push_back(rot);
 
-                    glm::vec4 transf = glm::column(jointTransf, 3);
+                    transf = glm::column(jointTransf, 3);
                     exJoint.trans.push_back(glm::vec3(transf));
                 }
             }
