@@ -127,15 +127,14 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             out << "bones " << rep.joints.size() << std::endl;
             for(auto const & jnt : rep.joints)
             {
-				glm::quat rot         = glm::quat_cast(jnt.inverse_bind);
-				rot                   = glm::normalize(rot);
-				glm::vec4 transf = glm::column(jnt.inverse_bind, 3);
-					
-                out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << " "
-					<< RoundEps(rot.x) << " " << RoundEps(rot.y) << " "
-                    << RoundEps(rot.z) << " " << RoundEps(rot.w) << " "
-                    << RoundEps(transf.x) << " " << RoundEps(transf.y) << " "
-                    << RoundEps(transf.z) << std::endl;
+                glm::quat rot    = glm::quat_cast(jnt.inverse_bind);
+                rot              = glm::normalize(rot);
+                glm::vec4 transf = glm::column(jnt.inverse_bind, 3);
+
+                out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << " " << RoundEps(rot.x)
+                    << " " << RoundEps(rot.y) << " " << RoundEps(rot.z) << " " << RoundEps(rot.w) << " "
+                    << RoundEps(transf.x) << " " << RoundEps(transf.y) << " " << RoundEps(transf.z)
+                    << std::endl;
             }
             out << std::endl;
         }
@@ -209,12 +208,19 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             out << "bbox " << RoundEps(rep.bboxes[i].min().x) << " " << RoundEps(rep.bboxes[i].min().y) << " "
                 << RoundEps(rep.bboxes[i].min().z) << " " << RoundEps(rep.bboxes[i].max().x) << " "
                 << RoundEps(rep.bboxes[i].max().y) << " " << RoundEps(rep.bboxes[i].max().z) << std::endl;
+
             for(auto const & jnt : rep.joints)
             {
-                out << "jtr " << RoundEps(jnt.rot[i].x) << " " << RoundEps(jnt.rot[i].y) << " "
-                    << RoundEps(jnt.rot[i].z) << " " << RoundEps(jnt.rot[i].w) << " "
-                    << RoundEps(jnt.trans[i].x) << " " << RoundEps(jnt.trans[i].y) << " "
-                    << RoundEps(jnt.trans[i].z) << std::endl;
+                if(rel_matrices)
+                    out << "jtr " << RoundEps(jnt.r_rot[i].x) << " " << RoundEps(jnt.r_rot[i].y) << " "
+                        << RoundEps(jnt.r_rot[i].z) << " " << RoundEps(jnt.r_rot[i].w) << " "
+                        << RoundEps(jnt.r_trans[i].x) << " " << RoundEps(jnt.r_trans[i].y) << " "
+                        << RoundEps(jnt.r_trans[i].z) << std::endl;
+                else
+                    out << "jtr " << RoundEps(jnt.rot[i].x) << " " << RoundEps(jnt.rot[i].y) << " "
+                        << RoundEps(jnt.rot[i].z) << " " << RoundEps(jnt.rot[i].w) << " "
+                        << RoundEps(jnt.trans[i].x) << " " << RoundEps(jnt.trans[i].y) << " "
+                        << RoundEps(jnt.trans[i].z) << std::endl;
             }
             out << std::endl;
         }

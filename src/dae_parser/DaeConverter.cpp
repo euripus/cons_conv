@@ -15,7 +15,6 @@
 /******************************************************************************
  *
  ******************************************************************************/
-//class _daeNode;
 glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & transStack)
 {
     glm::mat4 mat(1.0), daeMat(1.0);
@@ -801,8 +800,8 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 {
                     exJoint.inverse_bind = joint->_invBindMat;
                     // relative matrices
-                    glm::quat rot         = glm::quat_cast(joint->_frames[i]);
-                    rot                   = glm::normalize(rot);
+                    glm::quat rot = glm::quat_cast(joint->_frames[i]);
+                    rot           = glm::normalize(rot);
                     exJoint.r_rot.push_back(rot);
 
                     glm::vec4 transf = glm::column(joint->_frames[i], 3);
