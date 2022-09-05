@@ -15,7 +15,7 @@
 /******************************************************************************
  *
  ******************************************************************************/
-class _daeNode;
+//class _daeNode;
 glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & transStack)
 {
     glm::mat4 mat(1.0), daeMat(1.0);
@@ -157,7 +157,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         sceneNode->_relTransf = relMat;
 
         if(parent != nullptr)
-            sceneNode->_transf = parent->_transf * sceneNode->_relTransf;
+            sceneNode->_transf = sceneNode->_relTransf * parent->_transf;
         else
             sceneNode->_transf = sceneNode->_relTransf;
 

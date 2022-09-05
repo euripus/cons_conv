@@ -127,7 +127,15 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             out << "bones " << rep.joints.size() << std::endl;
             for(auto const & jnt : rep.joints)
             {
-                out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << std::endl;
+				glm::quat rot         = glm::quat_cast(jnt.inverse_bind);
+				rot                   = glm::normalize(rot);
+				glm::vec4 transf = glm::column(jnt.inverse_bind, 3);
+					
+                out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << " "
+					<< RoundEps(rot.x) << " " << RoundEps(rot.y) << " "
+                    << RoundEps(rot.z) << " " << RoundEps(rot.w) << " "
+                    << RoundEps(transf.x) << " " << RoundEps(transf.y) << " "
+                    << RoundEps(transf.z) << std::endl;
             }
             out << std::endl;
         }
