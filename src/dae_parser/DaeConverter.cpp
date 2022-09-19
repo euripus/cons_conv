@@ -111,7 +111,6 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
                                       DaeVisualScene const & sc, std::vector<glm::mat4> animTransAccum)
 {
     // Note: animTransAccum is used for pure transformation nodes of Collada that are no joints or meshes
-
     if(node._reference)
     {
         DaeNode const * nd = sc.FindNode(node._name);
@@ -124,8 +123,9 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         }
     }
 
-    glm::mat4 upMat  = GetConvertMatrix(_parser._up_axis);
-    glm::mat4 relMat = transAccum * upMat * CreateTransformMatrix(node._transStack) * glm::transpose(upMat);
+    glm::mat4 up_mat = glm::mat4(1.0f);   // GetConvertMatrix(_parser._up_axis);
+    glm::mat4 rel_mat =
+        up_mat * CreateTransformMatrix(node._transStack) * glm::transpose(up_mat) * transAccum;
 
     SceneNode * sceneNode = nullptr;
 
@@ -153,18 +153,18 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
     if(sceneNode != nullptr)
     {
-        sceneNode->_relTransf = relMat;
+        sceneNode->_relTransf = rel_mat;
 
         if(parent != nullptr)
             sceneNode->_transf = sceneNode->_relTransf * parent->_transf;
         else
             sceneNode->_transf = sceneNode->_relTransf;
 
-        transAccum = glm::mat4(1.0);
+        transAccum = glm::mat4(1.0f);
     }
     else
     {
-        transAccum = relMat;
+        transAccum = rel_mat;
     }
 
     // Animation
@@ -195,7 +195,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, uint32_t frame) c
 {
     int          trIndex = -1;
     glm::mat4    tr      = glm::mat4(1.0);
-    glm::mat4    upMat   = GetConvertMatrix(_parser._up_axis);
+    glm::mat4    upMat   = tr;//GetConvertMatrix(_parser._up_axis);
     DaeSampler * sampler = _parser._anim->FindAnimForTarget(node._id, &trIndex);
 
     if(sampler != nullptr)
@@ -341,35 +341,36 @@ void DaeConverter::ProcessMeshes()
         glm::mat4 trans = CreateTransformMatrix(msh->_daeNode->_transStack);
         trans           = GetConvertMatrix(_parser._up_axis) * trans;
 
-        MeshNode *  curMesh = msh.get();
-        DaeSkin *   skn     = nullptr;
-        std::string geoSrc;
+        MeshNode *  cur_mesh = msh.get();
+        DaeSkin *   skn      = nullptr;
+        std::string geo_src;
 
-        for(size_t ins = 0; ins < curMesh->_daeNode->_instances.size(); ins++)
+        for(size_t ins = 0; ins < cur_mesh->_daeNode->_instances.size(); ins++)
         {
             if(!_parser._controllers->_skinControllers.empty())
             {
-                std::string skinId = curMesh->_daeNode->_instances[ins]._url;
-                auto        it     = std::find_if(_parser._controllers->_skinControllers.begin(),
-                                                  _parser._controllers->_skinControllers.end(),
-                                                  [&skinId](DaeSkin const & skn) -> bool { return skn._id == skinId; });
+                std::string skin_id = cur_mesh->_daeNode->_instances[ins]._url;
+                auto        it =
+                    std::find_if(_parser._controllers->_skinControllers.begin(),
+                                 _parser._controllers->_skinControllers.end(),
+                                 [&skin_id](DaeSkin const & skn) -> bool { return skn._id == skin_id; });
 
                 if(it != _parser._controllers->_skinControllers.end())
                 {
-                    skn    = &(*it);
-                    geoSrc = skn->_ownerId;
+                    skn     = &(*it);
+                    geo_src = skn->_ownerId;
                 }
                 else
                 {
                     std::stringstream ss;
-                    ss << "ERROR! Controller node not found. Skin id: " << skinId << "\n";
+                    ss << "ERROR! Controller node not found. Skin id: " << skin_id << "\n";
 
                     throw std::runtime_error(ss.str());
                 }
             }
             else
             {
-                geoSrc = curMesh->_daeNode->_instances[ins]._url;
+                geo_src = cur_mesh->_daeNode->_instances[ins]._url;
             }
 
             // Check that skin has all required arrays
@@ -384,13 +385,13 @@ void DaeConverter::ProcessMeshes()
                 }
             }
 
-            DaeMeshNode const *      geometry = _parser._geom->Find(geoSrc);
-            std::vector<JointNode *> jointLookup;
+            DaeMeshNode const *      geometry = _parser._geom->Find(geo_src);
+            std::vector<JointNode *> joint_lookup;
 
             if(!geometry)
             {
                 std::stringstream ss;
-                ss << "ERROR! Geometry data not found. Geometry name: " << geoSrc << "\n";
+                ss << "ERROR! Geometry data not found. Geometry name: " << geo_src << "\n";
 
                 throw std::runtime_error(ss.str());
             }
@@ -402,15 +403,15 @@ void DaeConverter::ProcessMeshes()
                 {
                     std::string sid = skn->_jointArray->_stringArray[j];
 
-                    jointLookup.push_back(nullptr);
+                    joint_lookup.push_back(nullptr);
 
                     bool found = false;
                     for(auto & jnt : _joints)
                     {
                         if(jnt->_daeNode->_sid == sid)
                         {
-                            jointLookup[j] = jnt.get();
-                            found          = true;
+                            joint_lookup[j] = jnt.get();
+                            found           = true;
                             break;
                         }
                     }
@@ -422,18 +423,18 @@ void DaeConverter::ProcessMeshes()
                 }
 
                 // Find bind matrices
-                glm::mat4 upMat        = GetConvertMatrix(_parser._up_axis);
+                glm::mat4 upMat        = glm::mat4(1.0f);//GetConvertMatrix(_parser._up_axis);
                 glm::mat4 bindShapeMat = upMat * skn->_bindShapeMat * glm::transpose(upMat);
                 for(unsigned int j = 0; j < skn->_jointArray->_stringArray.size(); ++j)
                 {
-                    if(jointLookup[j] != nullptr)
+                    if(joint_lookup[j] != nullptr)
                     {
-                        jointLookup[j]->_daeInvBindMat =
+                        joint_lookup[j]->_daeInvBindMat =
                             upMat * CreateDAEMatrix(&skn->_bindMatArray->_floatArray[j * 16])
                             * glm::transpose(upMat);
 
                         // Multiply bind matrices with bind shape matrix
-                        jointLookup[j]->_invBindMat = jointLookup[j]->_daeInvBindMat * bindShapeMat;
+                        joint_lookup[j]->_invBindMat = joint_lookup[j]->_daeInvBindMat * bindShapeMat;
                     }
                 }
             }
@@ -461,7 +462,7 @@ void DaeConverter::ProcessMeshes()
                         pos._data.push_back(vertex);
                     }
 
-                    curMesh->_vertices._sources_vec3.push_back(std::move(pos));
+                    cur_mesh->_vertices._sources_vec3.push_back(std::move(pos));
 
                     if(skn != nullptr)
                     {
@@ -480,7 +481,7 @@ void DaeConverter::ProcessMeshes()
                                 vert_weight_vect._weights.push_back(tw);
                             }
 
-                            curMesh->_vertices._wght.push_back(vert_weight_vect);
+                            cur_mesh->_vertices._wght.push_back(vert_weight_vect);
                         }
                     }
                 }
@@ -504,7 +505,7 @@ void DaeConverter::ProcessMeshes()
                             chunk._data.push_back(vertex);
                         }
 
-                        curMesh->_vertices._sources_vec2.push_back(std::move(chunk));
+                        cur_mesh->_vertices._sources_vec2.push_back(std::move(chunk));
                     }
                     else
                     {
@@ -523,7 +524,7 @@ void DaeConverter::ProcessMeshes()
                             chunk._data.push_back(vertex);
                         }
 
-                        curMesh->_vertices._sources_vec3.push_back(std::move(chunk));
+                        cur_mesh->_vertices._sources_vec3.push_back(std::move(chunk));
                     }
                 }
             }
@@ -562,27 +563,38 @@ void DaeConverter::ProcessMeshes()
 
                         tg._indices.push_back(std::move(index));
                     }
-                    curMesh->_polylists.push_back(std::move(tg));
+                    cur_mesh->_polylists.push_back(std::move(tg));
                 }
             }
 
             // Apply transform matrix
-            // if( skn != nullptr )
-            //{
-            // trans = trans * skn->_bindShapeMat;
-            //}
-            for(auto & vec3_array : curMesh->_vertices._sources_vec3)
+            /*if(skn != nullptr)
             {
-                std::for_each(vec3_array._data.begin(), vec3_array._data.end(), [&trans](glm::vec3 & vt) {
-                    glm::vec4 tmp(vt, 1.0);
-                    tmp = trans * tmp;
-                    if(tmp.w != 1.0f)
-                    {
-                        std::cout << "Warning. Transform matrix not affine. "
-                                  << "Result may be incorrect.\n";
-                    }
-                    vt = glm::vec3(tmp.x, tmp.y, tmp.z);
-                });
+                glm::mat4 upMat        = GetConvertMatrix(_parser._up_axis);
+                glm::mat4 bindShapeMat = upMat * skn->_bindShapeMat * glm::transpose(upMat);
+                trans                  = bindShapeMat * trans;
+            }*/
+
+            for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
+            {
+                std::for_each(vec3_array._data.begin(), vec3_array._data.end(),
+                              [&trans, sem = vec3_array._semantic](glm::vec3 & vt) {
+                                  glm::vec4 tmp(0.0f);
+                                  if(sem == VertexData::Semantic::POSITION)
+                                      tmp = glm::vec4(vt, 1.0f);
+                                  else
+                                      tmp = glm::vec4(vt, 0.0f);
+
+                                  tmp = trans * tmp;
+
+                                  if(sem == VertexData::Semantic::POSITION && tmp.w != 1.0f)
+                                  {
+                                      std::cout << "Warning. Transform matrix not affine. "
+                                                << "Result may be incorrect.\n";
+                                  }
+
+                                  vt = glm::vec3(tmp.x, tmp.y, tmp.z);
+                              });
             }
         }
     }
