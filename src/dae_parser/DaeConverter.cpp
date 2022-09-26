@@ -15,12 +15,12 @@
 /******************************************************************************
  *
  ******************************************************************************/
-glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & transStack)
+glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_stack)
 {
-    glm::mat4 mat(1.0), daeMat(1.0);
+    glm::mat4 mat(1.0), dae_mat(1.0);
     glm::mat4 scale(1.0), rotate(1.0), trans(1.0);
 
-    for(auto & tr : transStack)
+    for(auto & tr : trans_stack)
     {
         switch(tr._type)
         {
@@ -42,13 +42,13 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & transStac
                 }
             case DaeTransformation::Type::MATRIX:
                 {
-                    daeMat = CreateDAEMatrix(tr._values);
+                    dae_mat = CreateDAEMatrix(tr._values);
                     break;
                 }
         }
     }
 
-    mat = daeMat * trans * rotate * scale;   /// MATRIX transform order
+    mat = dae_mat * trans * rotate * scale;   /// MATRIX transform order
     return mat;
 }
 
@@ -107,15 +107,15 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         ProcessMeshes();
 }
 
-SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 transAccum,
-                                      DaeVisualScene const & sc, std::vector<glm::mat4> animTransAccum)
+SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 trans_accum,
+                                      DaeVisualScene const & sc, std::vector<glm::mat4> anim_trans_accum)
 {
     // Note: animTransAccum is used for pure transformation nodes of Collada that are no joints or meshes
     if(node._reference)
     {
         DaeNode const * nd = sc.FindNode(node._name);
         if(nd)
-            return ProcessNode(*nd, parent, transAccum, sc, animTransAccum);
+            return ProcessNode(*nd, parent, trans_accum, sc, anim_trans_accum);
         else
         {
             std::cout << "Warning: undefined reference '" + node._name + "' in instance_node" << std::endl;
@@ -123,9 +123,9 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         }
     }
 
-    glm::mat4 up_mat = glm::mat4(1.0f);   // GetConvertMatrix(_parser._up_axis);
+    glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
     glm::mat4 rel_mat =
-        up_mat * CreateTransformMatrix(node._transStack) * glm::transpose(up_mat) * transAccum;
+        up_mat * CreateTransformMatrix(node._transStack) * glm::transpose(up_mat) * trans_accum;
 
     SceneNode * sceneNode = nullptr;
 
@@ -160,30 +160,30 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         else
             sceneNode->_transf = sceneNode->_relTransf;
 
-        transAccum = glm::mat4(1.0f);
+        trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        transAccum = rel_mat;
+        trans_accum = rel_mat * trans_accum;
     }
 
     // Animation
     for(uint32_t i = 0; i < _frameCount; ++i)
     {
-        glm::mat4 mat = GetNodeTransform(node, i) * animTransAccum[i];
+        glm::mat4 mat = GetNodeTransform(node, i) * anim_trans_accum[i];
         if(sceneNode != nullptr)
         {
             sceneNode->_frames.push_back(mat);
-            animTransAccum[i] = glm::mat4(1.0);
+            anim_trans_accum[i] = glm::mat4(1.0);
         }
         else
-            animTransAccum[i] = mat;   // Pure transformation node
+            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node
     }
 
     for(auto & chd : node._children)
     {
         SceneNode * parNode = sceneNode != nullptr ? sceneNode : parent;
-        SceneNode * snd     = ProcessNode(*chd, parNode, transAccum, sc, animTransAccum);
+        SceneNode * snd     = ProcessNode(*chd, parNode, trans_accum, sc, anim_trans_accum);
         if(snd != nullptr && parNode != nullptr)
             parNode->_child.push_back(snd);
     }
@@ -193,16 +193,17 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
 glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, uint32_t frame) const
 {
-    int          trIndex = -1;
-    glm::mat4    tr      = glm::mat4(1.0);
-    glm::mat4    upMat   = tr;//GetConvertMatrix(_parser._up_axis);
-    DaeSampler * sampler = _parser._anim->FindAnimForTarget(node._id, &trIndex);
+    int          tr_index = -1;
+    glm::mat4    tr       = glm::mat4(1.0);
+    glm::mat4    up_mat   = GetConvertMatrix(_parser._up_axis);
+    DaeSampler * sampler  = _parser._anim->FindAnimForTarget(node._id, &tr_index);
 
     if(sampler != nullptr)
     {
         if(sampler->_output->_floatArray.size() == _frameCount * 16)
         {
-            tr = upMat * CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]) * glm::transpose(upMat);
+            tr =
+                up_mat * CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]) * glm::transpose(up_mat);
         }
         else
         {
@@ -216,7 +217,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, uint32_t frame) c
     else
     {
         // If no animation data is found, use standard transformation
-        tr = upMat * CreateTransformMatrix(node._transStack) * glm::transpose(upMat);
+        tr = up_mat * CreateTransformMatrix(node._transStack) * glm::transpose(up_mat);
     }
 
     return tr;
@@ -423,18 +424,18 @@ void DaeConverter::ProcessMeshes()
                 }
 
                 // Find bind matrices
-                glm::mat4 upMat        = glm::mat4(1.0f);//GetConvertMatrix(_parser._up_axis);
-                glm::mat4 bindShapeMat = upMat * skn->_bindShapeMat * glm::transpose(upMat);
+                glm::mat4 up_mat         = GetConvertMatrix(_parser._up_axis);
+                glm::mat4 bind_shape_mat = up_mat * skn->_bindShapeMat * glm::transpose(up_mat);
                 for(unsigned int j = 0; j < skn->_jointArray->_stringArray.size(); ++j)
                 {
                     if(joint_lookup[j] != nullptr)
                     {
                         joint_lookup[j]->_daeInvBindMat =
-                            upMat * CreateDAEMatrix(&skn->_bindMatArray->_floatArray[j * 16])
-                            * glm::transpose(upMat);
+                            up_mat * CreateDAEMatrix(&skn->_bindMatArray->_floatArray[j * 16])
+                            * glm::transpose(up_mat);
 
                         // Multiply bind matrices with bind shape matrix
-                        joint_lookup[j]->_invBindMat = joint_lookup[j]->_daeInvBindMat * bindShapeMat;
+                        joint_lookup[j]->_invBindMat = joint_lookup[j]->_daeInvBindMat * bind_shape_mat;
                     }
                 }
             }
@@ -637,30 +638,30 @@ void PushVertexData(InternalData::SubMesh & msh, CurrVertexData const & vd)
         msh.tex_coords[i].push_back(vd.tex_coords[i]);
 }
 
-bool FindSimilarVertex(CurrVertexData const & vd, InternalData::SubMesh const & msh, unsigned int * foundInd)
+bool FindSimilarVertex(CurrVertexData const & vd, InternalData::SubMesh const & msh, unsigned int * found_ind)
 {
     for(unsigned int i = 0; i < msh.pos.size(); i++)
     {
-        bool isEqual = false;
+        bool is_equal = false;
 
-        isEqual = VecEqual(vd.pos, msh.pos[i]);
+        is_equal = VecEqual(vd.pos, msh.pos[i]);
         if(vd.is_normal)
-            isEqual = isEqual && VecEqual(vd.normal, msh.normal[i]);
+            is_equal = is_equal && VecEqual(vd.normal, msh.normal[i]);
         if(vd.is_tangent)
-            isEqual = isEqual && VecEqual(vd.tangent, msh.tangent[i]);
+            is_equal = is_equal && VecEqual(vd.tangent, msh.tangent[i]);
         if(vd.is_bitangent)
-            isEqual = isEqual && VecEqual(vd.bitangent, msh.bitangent[i]);
+            is_equal = is_equal && VecEqual(vd.bitangent, msh.bitangent[i]);
         if(vd.is_color)
-            isEqual = isEqual && VecEqual(vd.color, msh.color[i]);
+            is_equal = is_equal && VecEqual(vd.color, msh.color[i]);
 
         for(unsigned int j = 0; j < vd.tex_coords.size(); j++)
         {
-            isEqual = isEqual && VecEqual(vd.tex_coords[j], msh.tex_coords[j][i]);
+            is_equal = is_equal && VecEqual(vd.tex_coords[j], msh.tex_coords[j][i]);
         }
 
-        if(isEqual)
+        if(is_equal)
         {
-            *foundInd = i;
+            *found_ind = i;
             return true;
         }
     }
@@ -668,12 +669,12 @@ bool FindSimilarVertex(CurrVertexData const & vd, InternalData::SubMesh const & 
     return false;
 }
 
-InternalData::WeightsVec GetWeightsForVertex(VertexData::WeightsVec wvec)
+InternalData::WeightsVec GetWeightsForVertex(VertexData::WeightsVec const & wvec)
 {
     InternalData::WeightsVec wv;
     InternalData::Weight     temp_weight{0, 0.0f};
 
-    for(auto w : wvec._weights)
+    for(auto const & w : wvec._weights)
     {
         temp_weight.jointIndex = w._jointIndex;
         temp_weight.w          = w._w;
@@ -781,19 +782,19 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
         for(auto & joint : _joints)
         {
-            InternalData::JointNode exJoint;
+            InternalData::JointNode ex_joint;
 
-            exJoint.index = joint->_index;
-            exJoint.name  = joint->_daeNode->_name;
+            ex_joint.index = joint->_index;
+            ex_joint.name  = joint->_daeNode->_name;
 
             if(joint->_parent != nullptr)
             {
                 JointNode * parent = dynamic_cast<JointNode *>(joint->_parent);
-                exJoint.parent     = parent->_index;
+                ex_joint.parent    = parent->_index;
             }
             else
             {
-                exJoint.parent = 0;   // root joint
+                ex_joint.parent = 0;   // root joint
 
                 ++parent_check;
                 if(parent_check > 1)
@@ -810,27 +811,27 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
             {
                 for(uint16_t i = 0; i < _frameCount; i++)
                 {
-                    exJoint.inverse_bind = joint->_invBindMat;
+                    ex_joint.inverse_bind = joint->_invBindMat;
                     // relative matrices
                     glm::quat rot = glm::quat_cast(joint->_frames[i]);
                     rot           = glm::normalize(rot);
-                    exJoint.r_rot.push_back(rot);
+                    ex_joint.r_rot.push_back(rot);
 
                     glm::vec4 transf = glm::column(joint->_frames[i], 3);
-                    exJoint.r_trans.push_back(glm::vec3(transf));
+                    ex_joint.r_trans.push_back(glm::vec3(transf));
 
                     // absolute matrices
-                    glm::mat4 jointTransf = joint->_aFrames[i] * exJoint.inverse_bind;
+                    glm::mat4 jointTransf = joint->_aFrames[i] * ex_joint.inverse_bind;
                     rot                   = glm::quat_cast(jointTransf);
                     rot                   = glm::normalize(rot);
-                    exJoint.rot.push_back(rot);
+                    ex_joint.a_rot.push_back(rot);
 
                     transf = glm::column(jointTransf, 3);
-                    exJoint.trans.push_back(glm::vec3(transf));
+                    ex_joint.a_trans.push_back(glm::vec3(transf));
                 }
             }
 
-            rep.joints.push_back(std::move(exJoint));
+            rep.joints.push_back(std::move(ex_joint));
         }
     }
 

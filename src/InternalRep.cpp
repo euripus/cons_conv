@@ -365,8 +365,8 @@ void InternalData::CalculateBBoxes()
                 glm::mat4 matTr(0.0f);
                 for(auto & weight : msh.weights[j])
                 {
-                    glm::mat4 mt = glm::mat4_cast(joints[weight.jointIndex - 1].rot[i]);
-                    mt = glm::column(mt, 3, glm::vec4(joints[weight.jointIndex - 1].trans[i], 1.0f));
+                    glm::mat4 mt = glm::mat4_cast(joints[weight.jointIndex - 1].a_rot[i]);
+                    mt = glm::column(mt, 3, glm::vec4(joints[weight.jointIndex - 1].a_trans[i], 1.0f));
 
                     matTr += weight.w * mt;
                 }

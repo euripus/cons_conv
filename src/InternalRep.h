@@ -27,8 +27,8 @@ struct InternalData
         uint32_t    index;
         std::string name;
 
-        std::vector<glm::quat> rot;     // absolute transform matrix for animation
-        std::vector<glm::vec3> trans;   // vec.size() == numFrames
+        std::vector<glm::quat> a_rot;     // absolute transform matrix for animation
+        std::vector<glm::vec3> a_trans;   // vec.size() == numFrames
 
         std::vector<glm::quat> r_rot;   // relative transform matrix for animation
         std::vector<glm::vec3> r_trans;

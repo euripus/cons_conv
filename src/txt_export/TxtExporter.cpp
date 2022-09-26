@@ -69,7 +69,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
 
             // Write positions
             std::for_each(msh.pos.begin(), msh.pos.end(), [&out](glm::vec3 const & v) {
-                out << "vtx " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
+                out << "vps " << RoundEps(v.x) << " " << RoundEps(v.y) << " " << RoundEps(v.z) << std::endl;
             });
 
             // Write normals
@@ -201,8 +201,8 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
         out << std::endl;
 
         // Write animations
-        assert(rep.joints[0].rot.size() == rep.numFrames);
-        assert(rep.joints[0].trans.size() == rep.numFrames);
+        assert(rep.joints[0].a_rot.size() == rep.numFrames);
+        assert(rep.joints[0].a_trans.size() == rep.numFrames);
 
         out << "frames " << rep.numFrames << std::endl;
         out << "framerate " << rep.frameRate << std::endl;
@@ -223,10 +223,10 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
                         << RoundEps(jnt.r_trans[i].x) << " " << RoundEps(jnt.r_trans[i].y) << " "
                         << RoundEps(jnt.r_trans[i].z) << std::endl;
                 else
-                    out << "jtr " << RoundEps(jnt.rot[i].x) << " " << RoundEps(jnt.rot[i].y) << " "
-                        << RoundEps(jnt.rot[i].z) << " " << RoundEps(jnt.rot[i].w) << " "
-                        << RoundEps(jnt.trans[i].x) << " " << RoundEps(jnt.trans[i].y) << " "
-                        << RoundEps(jnt.trans[i].z) << std::endl;
+                    out << "jtr " << RoundEps(jnt.a_rot[i].x) << " " << RoundEps(jnt.a_rot[i].y) << " "
+                        << RoundEps(jnt.a_rot[i].z) << " " << RoundEps(jnt.a_rot[i].w) << " "
+                        << RoundEps(jnt.a_trans[i].x) << " " << RoundEps(jnt.a_trans[i].y) << " "
+                        << RoundEps(jnt.a_trans[i].z) << std::endl;
             }
             out << std::endl;
         }
