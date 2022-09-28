@@ -112,7 +112,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
                 std::for_each(end_wieghts_vec.begin(), end_wieghts_vec.end(),
                               [&out](unsigned int i) { out << "wgi " << i << std::endl; });
                 std::for_each(linear_weight.begin(), linear_weight.end(), [&out](auto & w) {
-                    out << "wgh " << w.jointIndex << " " << RoundEps(w.w) << std::endl;
+                    out << "wgh " << w.joint_index << " " << RoundEps(w.w) << std::endl;
                 });
                 out << std::endl;
 
@@ -174,7 +174,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
 
     if(animation)
     {
-        if(rep.numFrames == 0)
+        if(rep.num_frames == 0)
             return;
 
         std::ofstream out(new_anim_fname, std::ofstream::out | std::ofstream::trunc);
@@ -201,14 +201,14 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
         out << std::endl;
 
         // Write animations
-        assert(rep.joints[0].a_rot.size() == rep.numFrames);
-        assert(rep.joints[0].a_trans.size() == rep.numFrames);
+        assert(rep.joints[0].a_rot.size() == rep.num_frames);
+        assert(rep.joints[0].a_trans.size() == rep.num_frames);
 
-        out << "frames " << rep.numFrames << std::endl;
-        out << "framerate " << rep.frameRate << std::endl;
+        out << "frames " << rep.num_frames << std::endl;
+        out << "framerate " << rep.frame_rate << std::endl;
         out << std::endl;
 
-        for(uint32_t i = 0; i < rep.numFrames; i++)
+        for(uint32_t i = 0; i < rep.num_frames; i++)
         {
             out << "frame " << i << std::endl;
             out << "bbox " << RoundEps(rep.bboxes[i].min().x) << " " << RoundEps(rep.bboxes[i].min().y) << " "

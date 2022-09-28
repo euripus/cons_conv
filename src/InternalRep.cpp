@@ -8,11 +8,11 @@
 #include <sstream>
 #include <stdexcept>
 
-InternalData::InternalData() : numFrames(0), frameRate(0.0f) {}
+InternalData::InternalData() : num_frames(0), frame_rate(0.0f) {}
 
 unsigned int InternalData::RemoveDegeneratedTriangles()
 {
-    unsigned int numDegTris = 0;
+    unsigned int num_deg_tris = 0;
 
     for(auto & mesh : meshes)
     {
@@ -24,7 +24,7 @@ unsigned int InternalData::RemoveDegeneratedTriangles()
 
             if(glm::length(glm::cross((v2 - v1), (v3 - v1))) < Epsilon<float>::epsilon())
             {
-                numDegTris++;
+                num_deg_tris++;
                 // Remove triangle indices
                 mesh.indexes.erase(mesh.indexes.begin() + i + 2);
                 mesh.indexes.erase(mesh.indexes.begin() + i + 1);
@@ -34,7 +34,7 @@ unsigned int InternalData::RemoveDegeneratedTriangles()
         }
     }
 
-    return numDegTris;
+    return num_deg_tris;
 }
 
 //===========================================================================//
@@ -59,7 +59,7 @@ struct OptFace
     float GetScore() { return verts[0]->score + verts[1]->score + verts[2]->score; }
 };
 
-void OptVertex::UpdateScore(int cacheIndex)
+void OptVertex::UpdateScore(int cache_index)
 {
     if(faces.empty())
     {
@@ -68,12 +68,12 @@ void OptVertex::UpdateScore(int cacheIndex)
     }
 
     // The constants used here are coming from the paper
-    if(cacheIndex < 0)
+    if(cache_index < 0)
         score = 0;   // Not in cache
-    else if(cacheIndex < 3)
+    else if(cache_index < 3)
         score = 0.75f;   // Among three most recent vertices
     else
-        score = std::pow(1.0f - ((cacheIndex - 3.0f) / InternalData::maxCacheSize), 1.5f);
+        score = std::pow(1.0f - ((cache_index - 3.0f) / InternalData::maxCacheSize), 1.5f);
 
     score += 2.0f * std::pow((float)faces.size(), -0.5f);
 }
@@ -88,7 +88,7 @@ void InternalData::OptimizeIndexOrder()
             continue;
 
         std::vector<OptVertex>    verts(mesh.pos.size());
-        std::vector<unsigned int> newIndex;
+        std::vector<unsigned int> new_index;
         std::list<OptFace>        faces;
         std::list<OptVertex *>    cache;
 
@@ -115,8 +115,8 @@ void InternalData::OptimizeIndexOrder()
         // Main loop of algorithm
         while(!faces.empty())
         {
-            OptFace * bestFace  = nullptr;
-            float     bestScore = -1.0f;
+            OptFace * best_face  = nullptr;
+            float     best_score = -1.0f;
 
             // Try to find best scoring face in cache
             auto itr1 = cache.begin();
@@ -125,10 +125,10 @@ void InternalData::OptimizeIndexOrder()
                 auto itr2 = (*itr1)->faces.begin();
                 while(itr2 != (*itr1)->faces.end())
                 {
-                    if((*itr2)->GetScore() > bestScore)
+                    if((*itr2)->GetScore() > best_score)
                     {
-                        bestFace  = *itr2;
-                        bestScore = bestFace->GetScore();
+                        best_face  = *itr2;
+                        best_score = best_face->GetScore();
                     }
                     ++itr2;
                 }
@@ -136,15 +136,15 @@ void InternalData::OptimizeIndexOrder()
             }
 
             // If that didn't work find it in the complete list of triangles
-            if(bestFace == nullptr)
+            if(best_face == nullptr)
             {
                 auto itr2 = faces.begin();
                 while(itr2 != faces.end())
                 {
-                    if((*itr2).GetScore() > bestScore)
+                    if((*itr2).GetScore() > best_score)
                     {
-                        bestFace  = &(*itr2);
-                        bestScore = bestFace->GetScore();
+                        best_face  = &(*itr2);
+                        best_score = best_face->GetScore();
                     }
                     ++itr2;
                 }
@@ -154,21 +154,21 @@ void InternalData::OptimizeIndexOrder()
             for(unsigned int i = 0; i < 3; ++i)
             {
                 // Add vertex to draw list
-                newIndex.push_back(bestFace->verts[i]->index);
+                new_index.push_back(best_face->verts[i]->index);
 
                 // Move vertex to head of cache
-                itr1 = std::find(cache.begin(), cache.end(), bestFace->verts[i]);
+                itr1 = std::find(cache.begin(), cache.end(), best_face->verts[i]);
                 if(itr1 != cache.end())
                     cache.erase(itr1);
-                cache.push_front(bestFace->verts[i]);
+                cache.push_front(best_face->verts[i]);
 
                 // Remove face from vertex lists
-                bestFace->verts[i]->faces.erase(bestFace);
+                best_face->verts[i]->faces.erase(best_face);
             }
 
             // Remove best face
-            faces.erase(std::find_if(faces.begin(), faces.end(), [&bestFace](OptFace const & fc) -> bool {
-                return bestFace->id == fc.id;
+            faces.erase(std::find_if(faces.begin(), faces.end(), [&best_face](OptFace const & fc) -> bool {
+                return best_face->id == fc.id;
             }));
 
             // Update scores of vertices in cache
@@ -185,7 +185,7 @@ void InternalData::OptimizeIndexOrder()
             }
         }
 
-        std::copy(newIndex.begin(), newIndex.end(), mesh.indexes.begin());
+        std::copy(new_index.begin(), new_index.end(), mesh.indexes.begin());
     }
 }
 
@@ -196,14 +196,14 @@ float InternalData::CalcCacheEfficiency() const
     for(auto & mesh : meshes)
     {
         unsigned int            misses = 0;
-        std::list<unsigned int> testCache;
+        std::list<unsigned int> test_cache;
         for(auto index : mesh.indexes)
         {
-            if(std::find(testCache.begin(), testCache.end(), index) == testCache.end())
+            if(std::find(test_cache.begin(), test_cache.end(), index) == test_cache.end())
             {
-                testCache.push_back(index);
-                if(testCache.size() > maxCacheSize)
-                    testCache.erase(testCache.begin());
+                test_cache.push_back(index);
+                if(test_cache.size() > maxCacheSize)
+                    test_cache.erase(test_cache.begin());
                 ++misses;
             }
         }
@@ -257,7 +257,7 @@ void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
         throw std::runtime_error(ss.str());
     }
 
-    unsigned int numInvalidBasis = 0;
+    unsigned int num_invalid_basis = 0;
 
     for(auto & mesh : meshes)
     {
@@ -315,11 +315,11 @@ void InternalData::CalculateTangentSpace(uint32_t tex_channnel)
             // Check if tangent space basis is invalid
             if(mesh.normal[i].length() == 0 || mesh.tangent[i].length() == 0
                || mesh.bitangent[i].length() == 0)
-                ++numInvalidBasis;
+                ++num_invalid_basis;
         }
     }
 
-    if(numInvalidBasis > 0)
+    if(num_invalid_basis > 0)
     {
         std::cout << "Warning: Geometry has zero-length basis vectors\n";
         std::cout << "   Maybe two faces point in opposite directions and share same vertices\n";
@@ -354,29 +354,29 @@ void InternalData::CalculateBBoxes()
     }
 
     bboxes.clear();
-    for(unsigned int i = 0; i < numFrames; ++i)
+    for(unsigned int i = 0; i < num_frames; ++i)
     {
-        std::vector<glm::vec3> newPosVec;
+        std::vector<glm::vec3> new_pos_vec;
 
         for(auto & msh : meshes)
         {
             for(unsigned int j = 0; j < msh.pos.size(); ++j)
             {
-                glm::mat4 matTr(0.0f);
+                glm::mat4 mat_tr(0.0f);
                 for(auto & weight : msh.weights[j])
                 {
-                    glm::mat4 mt = glm::mat4_cast(joints[weight.jointIndex - 1].a_rot[i]);
-                    mt = glm::column(mt, 3, glm::vec4(joints[weight.jointIndex - 1].a_trans[i], 1.0f));
+                    glm::mat4 mt = glm::mat4_cast(joints[weight.joint_index - 1].a_rot[i]);
+                    mt = glm::column(mt, 3, glm::vec4(joints[weight.joint_index - 1].a_trans[i], 1.0f));
 
-                    matTr += weight.w * mt;
+                    mat_tr += weight.w * mt;
                 }
 
-                glm::vec4 cpos = matTr * glm::vec4(msh.pos[j], 1.0);
-                newPosVec.push_back(glm::vec3(cpos));
+                glm::vec4 cpos = mat_tr * glm::vec4(msh.pos[j], 1.0);
+                new_pos_vec.push_back(glm::vec3(cpos));
             }
         }
         AABB temp;
-        temp.buildBoundBox(newPosVec);
+        temp.buildBoundBox(new_pos_vec);
         bboxes.push_back(temp);
     }
 }

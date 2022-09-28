@@ -16,7 +16,7 @@ struct InternalData
 {
     struct Weight
     {
-        uint32_t jointIndex;
+        uint32_t joint_index;
         float    w;
     };
     using WeightsVec = std::vector<Weight>;
@@ -64,8 +64,8 @@ struct InternalData
 
     std::vector<JointNode> joints;
     std::vector<AABB>      bboxes;
-    uint32_t               numFrames;
-    float                  frameRate;
+    uint32_t               num_frames;
+    float                  frame_rate;
 
     std::vector<SubMesh>  meshes;
     std::vector<Material> materials;

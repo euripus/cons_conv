@@ -38,7 +38,7 @@ struct VertexData
     {
         struct Weight
         {
-            unsigned int _jointIndex;
+            unsigned int _joint_index;
             float        _w;
         };
 
@@ -55,27 +55,27 @@ struct TriGroup
     using VertexAttribut = std::vector<unsigned int>;
 
     std::vector<VertexAttribut> _indices;   // _indices.size() == _sources_vec3.size() + _sources_vec2.size()
-    std::string                 _matId;
+    std::string                 _mat_id;
 };
 
 struct SceneNode
 {
     bool      _joint;
     glm::mat4 _transf;   // absolute transform - for animation and skin export ONLY. Mesh export not affect.
-    glm::mat4 _relTransf;   // relative transform -
+    glm::mat4 _rel_transf;   // relative transform -
 
-    std::vector<glm::mat4> _frames;   // Relative transformation for every frame
-    std::vector<glm::mat4> _aFrames;
+    std::vector<glm::mat4> _r_frames;   // Relative transformation for every frame
+    std::vector<glm::mat4> _a_frames;
 
     SceneNode *              _parent;
     std::vector<SceneNode *> _child;
 
-    DaeNode const * _daeNode;
+    DaeNode const * _dae_node;
 
-    SceneNode() : _joint(false), _parent(nullptr), _daeNode(nullptr)
+    SceneNode() : _joint(false), _parent(nullptr), _dae_node(nullptr)
     {
-        _transf    = glm::mat4(1.0f);
-        _relTransf = glm::mat4(1.0f);
+        _transf     = glm::mat4(1.0f);
+        _rel_transf = glm::mat4(1.0f);
     }
 
     virtual ~SceneNode() = default;
@@ -90,22 +90,22 @@ struct MeshNode : public SceneNode
 struct JointNode : public SceneNode
 {
     unsigned int _index;
-    glm::mat4    _daeInvBindMat;
-    glm::mat4    _invBindMat;   // inverse bind matrix
+    glm::mat4    _dae_inv_bind_mat;
+    glm::mat4    _inv_bind_mat;   // inverse bind matrix
 
     JointNode() : _index(0)
     {
-        _joint         = true;
-        _invBindMat    = glm::mat4(1.0f);
-        _daeInvBindMat = glm::mat4(1.0f);
+        _joint            = true;
+        _inv_bind_mat     = glm::mat4(1.0f);
+        _dae_inv_bind_mat = glm::mat4(1.0f);
     }
 };
 
 class DaeConverter : public Converter
 {
     DaeParser const & _parser;
-    uint32_t          _frameCount;
-    float             _maxAnimTime;
+    uint32_t          _frame_count;
+    float             _max_anim_time;
 
     std::vector<std::unique_ptr<MeshNode>>  _meshes;
     std::vector<std::unique_ptr<JointNode>> _joints;
