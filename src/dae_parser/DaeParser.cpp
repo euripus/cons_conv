@@ -130,13 +130,13 @@ glm::mat4 GetConvertMatrix(DaeParser::UpAxis up)
     if(up == DaeParser::UpAxis::Z_UP)
     {
         // Z_UP: Right(Positive x)  Up(Positive z) In(Negative y)
-        mt = glm::mat4(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
-                       glm::vec4(0.0f, -1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        mt = glm::mat4(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, -1.0f, 0.0f),
+                       glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     }
     else if(up == DaeParser::UpAxis::X_UP)
     {
         // X-UP: Right(Negative y)  Up(Positive x) In(Positive z)
-        mt = glm::mat4(glm::vec4(0.0f, -1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+        mt = glm::mat4(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f),
                        glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     }
 

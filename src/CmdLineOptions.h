@@ -22,7 +22,7 @@ struct CmdLineOptions
         material_export(false),
         geometry(false),
         animation(false),
-        relative(false),
+        relative(true),
         chan(0)
     {}
 };

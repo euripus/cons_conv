@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#define FLOATEPSILON 0.0001f
+#define FLOATEPSILON 0.00001f
 
 template<typename Val>
 struct Epsilon

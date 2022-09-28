@@ -114,7 +114,7 @@ protected:
     void         ConvertScene(DaeVisualScene const & sc);
     SceneNode *  ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 transAccum,
                              DaeVisualScene const & sc, std::vector<glm::mat4> animTransAccum);
-    glm::mat4    GetNodeTransform(DaeNode const & node, uint32_t frame) const;
+    glm::mat4    GetNodeTransform(DaeNode const & node, SceneNode const * scene_node, uint32_t frame) const;
     void         CalcAbsTransfMatrices();
     unsigned int FindJointIndex(std::string const & name) const;
 

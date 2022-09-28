@@ -24,7 +24,7 @@ bool ParseCmdLine(int argc, char ** argv, CmdLineOptions & cmd) noexcept
             "Specify data for export\n\tgeo+anim")(
             "convert-type,C", boost::program_options::value<std::string>()->default_value("txt"),
             "Type of export file: either plain text or binary format\n\tbin|txt")(
-            "matrix-type,M", boost::program_options::value<bool>(&cmd.relative)->default_value(false),
+            "matrix-type,M", boost::program_options::value<bool>(&cmd.relative)->default_value(true),
             "Export relative matrices for animation\n\t0|1")(
             "material-export",
             boost::program_options::value<bool>(&cmd.material_export)->default_value(false),
