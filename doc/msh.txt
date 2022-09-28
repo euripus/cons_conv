@@ -7,7 +7,7 @@ meshes
         weights
         bbox                        # min.x min.y min.z max.x max.y max.z
         material
-        vtx        <>               # vertex    x  y  z
+        vps        <>               # position  x  y  z
         vnr        <>               # normal    x  y  z
         vtg        <>               # tangent   x  y  z
         vbt        <>               # bitangent x  y  z
@@ -22,12 +22,12 @@ meshes
         wgh        <>               # jnt_ind  weight               # weights vector    (optional)
 bones                                                               # Skeleton. One     (optional)
                                                                     # per mesh         
-    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name
+    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name inv_bind_matrix
 
     
 .txt.anm
 bones
-    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name                    (dublicate from .txt.msh)
+    jnt            <>               # jnt_ind  prnt_jnt_ind jnt_name inv_bind_matrix    (dublicate from .txt.msh)
 frames
 framerate
     frame
