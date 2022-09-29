@@ -125,9 +125,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         }
     }
 
-    // glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
     glm::mat4 rel_mat = CreateTransformMatrix(node._transStack);
-    // up_mat * CreateTransformMatrix(node._transStack) * glm::transpose(up_mat) * trans_accum;
 
     SceneNode * scene_node = nullptr;
 
@@ -346,8 +344,7 @@ void DaeConverter::ProcessMeshes()
 {
     for(auto & msh : _meshes)
     {
-        glm::mat4 trans = msh->_transf;   // CreateTransformMatrix(msh->_daeNode->_transStack);
-        // trans           = GetConvertMatrix(_parser._up_axis) * trans;
+        glm::mat4 trans = msh->_transf;
 
         MeshNode *  cur_mesh = msh.get();
         DaeSkin *   skn      = nullptr;
