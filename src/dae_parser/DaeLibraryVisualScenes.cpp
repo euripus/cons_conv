@@ -45,7 +45,7 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
                 str              = end;
             }
 
-            _transStack.push_back(trans);
+            _trans_stack.push_back(trans);
         }
         else if(strcmp(node1.name(), "translate") == 0)
         {
@@ -61,7 +61,7 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
             str              = end;
             trans._values[2] = std::strtof(str, &end);
 
-            _transStack.push_back(trans);
+            _trans_stack.push_back(trans);
         }
         else if(strcmp(node1.name(), "rotate") == 0)
         {
@@ -79,7 +79,7 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
             str              = end;
             trans._values[3] = std::strtof(str, &end);
 
-            _transStack.push_back(trans);
+            _trans_stack.push_back(trans);
         }
         else if(strcmp(node1.name(), "scale") == 0)
         {
@@ -95,7 +95,7 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
             str              = end;
             trans._values[2] = std::strtof(str, &end);
 
-            _transStack.push_back(trans);
+            _trans_stack.push_back(trans);
         }
         else if(strcmp(node1.name(), "skew") == 0)
         {
@@ -127,10 +127,10 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
 
             if(strcmp(node1.name(), "instance_controller") == 0)
             {
-                pugi::xml_node skl     = node1.child("skeleton");
-                std::string    rootSkl = skl.text().get();
-                RemoveGate(rootSkl);
-                _rootJointName = rootSkl;
+                pugi::xml_node skl      = node1.child("skeleton");
+                std::string    root_skl = skl.text().get();
+                RemoveGate(root_skl);
+                _root_joint_name = root_skl;
             }
 
             if(!url.empty())
@@ -152,7 +152,7 @@ void DaeNode::Parse(pugi::xml_node const & node, DaeNode * parent)
                         {
                             std::string s = node4.attribute("target").value();
                             RemoveGate(s);
-                            inst._materialBindings[node4.attribute("symbol").value()] = s;
+                            inst._material_bindings[node4.attribute("symbol").value()] = s;
                         }
                     }
                 }

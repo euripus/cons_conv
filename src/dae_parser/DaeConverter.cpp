@@ -55,7 +55,8 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_sta
 /******************************************************************************
  *
  ******************************************************************************/
-DaeConverter::DaeConverter(DaeParser const & parser) : _parser(parser), _frame_count(0), _max_anim_time(0.0f)
+DaeConverter::DaeConverter(DaeParser const & parser) :
+    _parser(parser), _frame_count(0), _max_anim_time(0.0f), _skin_transform(1.0f)
 {}
 
 void DaeConverter::Convert()
@@ -125,15 +126,23 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         }
     }
 
-    glm::mat4 rel_mat = CreateTransformMatrix(node._transStack);
+    glm::mat4 rel_mat = CreateTransformMatrix(node._trans_stack);
 
-    SceneNode * scene_node = nullptr;
+    SceneNode * scene_node        = nullptr;
+    static bool first_joint_enter = true;
 
     if(node._joint)
     {
         auto jnt       = std::make_unique<JointNode>();
         jnt->_dae_node = &node;
         jnt->_parent   = parent;
+
+        if(first_joint_enter)
+        {
+            first_joint_enter = false;
+            _skin_transform   = trans_accum;
+            jnt->_is_root     = true;
+        }
 
         scene_node = jnt.get();
         _joints.push_back(std::move(jnt));
@@ -206,6 +215,10 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
         if(sampler->_output->_floatArray.size() == _frame_count * 16)
         {
             tr = CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]);
+
+            if(scene_node != nullptr && scene_node->_joint
+               && static_cast<JointNode const *>(scene_node)->_is_root)
+                tr = tr * _skin_transform;
         }
         else
         {
@@ -222,7 +235,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
         if(scene_node != nullptr)
             tr = scene_node->_transf;
         else
-            tr = CreateTransformMatrix(node._transStack);
+            tr = CreateTransformMatrix(node._trans_stack);
     }
 
     return tr;

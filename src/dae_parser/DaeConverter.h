@@ -92,10 +92,12 @@ struct JointNode : public SceneNode
     unsigned int _index;
     glm::mat4    _dae_inv_bind_mat;
     glm::mat4    _inv_bind_mat;   // inverse bind matrix
+    bool         _is_root;
 
     JointNode() : _index(0)
     {
         _joint            = true;
+        _is_root          = false;
         _inv_bind_mat     = glm::mat4(1.0f);
         _dae_inv_bind_mat = glm::mat4(1.0f);
     }
@@ -106,6 +108,7 @@ class DaeConverter : public Converter
     DaeParser const & _parser;
     uint32_t          _frame_count;
     float             _max_anim_time;
+    glm::mat4         _skin_transform;
 
     std::vector<std::unique_ptr<MeshNode>>  _meshes;
     std::vector<std::unique_ptr<JointNode>> _joints;

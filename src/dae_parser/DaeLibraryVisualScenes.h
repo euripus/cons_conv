@@ -25,19 +25,19 @@ struct DaeTransformation
 struct DaeInstance
 {
     std::string                        _url;
-    std::map<std::string, std::string> _materialBindings;
+    std::map<std::string, std::string> _material_bindings;
 };
 
 struct DaeNode
 {
     std::string _id, _sid;
     std::string _name;
-    std::string _rootJointName;   // for skin instance only
+    std::string _root_joint_name;   // for skin instance only
     bool        _joint;
     bool        _reference;
 
     DaeNode *                             _parent;
-    std::vector<DaeTransformation>        _transStack;
+    std::vector<DaeTransformation>        _trans_stack;
     std::vector<std::unique_ptr<DaeNode>> _children;
     std::vector<DaeInstance>              _instances;
 
