@@ -26,8 +26,8 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
     _id = skin.attribute("id").value();
     if(_id.empty())
         return;
-    _ownerId = node1.attribute("source").value();
-    RemoveGate(_ownerId);
+    _owner_id = node1.attribute("source").value();
+    RemoveGate(_owner_id);
 
     // Bind shape matrix
     pugi::xml_node node2 = node1.child("bind_shape_matrix");
@@ -45,7 +45,7 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
         str      = end;
         mat4[i]  = f;
     }
-    _bindShapeMat = CreateDAEMatrix(mat4);
+    _bind_shape_mat = CreateDAEMatrix(mat4);
 
     // Sources
     for(node2 = node1.child("source"); node2; node2 = node2.next_sibling("source"))
@@ -65,13 +65,13 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
             {
                 std::string id = node3.attribute("source").value();
                 RemoveGate(id);
-                _jointArray = Find(id);
+                _joint_array = Find(id);
             }
             else if(strcmp(node3.attribute("semantic").value(), "INV_BIND_MATRIX") == 0)
             {
                 std::string sourceId = node3.attribute("source").value();
                 RemoveGate(sourceId);
-                _bindMatArray = Find(sourceId);
+                _bind_mat_array = Find(sourceId);
             }
         }
     }
@@ -94,7 +94,7 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
             std::string id = node3.attribute("source").value();
             RemoveGate(id);
             DaeSource * vertJointArray = Find(id);
-            if(jointOffset != 0 || vertJointArray->_stringArray != _jointArray->_stringArray)
+            if(jointOffset != 0 || vertJointArray->_stringArray != _joint_array->_stringArray)
             {
                 std::cout << "Warning: Vertex weight joint array doesn't match skin joint array\n";
             }
@@ -104,7 +104,7 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
             weightOffset   = atoi(node3.attribute("offset").value());
             std::string id = node3.attribute("source").value();
             RemoveGate(id);
-            _weightArray = Find(id);
+            _weight_array = Find(id);
         }
     }
 
@@ -124,7 +124,7 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
             vertWeight.push_back(DaeWeight());
         }
 
-        _vertWeights.push_back(vertWeight);
+        _vert_weights.push_back(vertWeight);
     }
 
     node3 = node2.child("v");
@@ -133,7 +133,7 @@ void DaeSkin::Parse(pugi::xml_node const & skin)
         return;
     for(int i = 0; i < count; ++i)
     {
-        for(auto & vrtWeight : _vertWeights[i])
+        for(auto & vrtWeight : _vert_weights[i])
         {
             for(unsigned int k = 0; k < numInputs; ++k)
             {

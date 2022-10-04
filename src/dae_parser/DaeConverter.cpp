@@ -93,14 +93,13 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         _max_anim_time = _parser._anim->_maxAnimTime;
     }
 
-    glm::mat4              up_mat = GetConvertMatrix(_parser._up_axis);
     std::vector<glm::mat4> anim_trans_accum;
     for(unsigned int i = 0; i < _frame_count; ++i)
         anim_trans_accum.push_back(glm::mat4(1.0f));
 
     for(size_t i = 0; i < sc._nodes.size(); i++)
     {
-        ProcessNode(sc._nodes[i], nullptr, up_mat, sc, anim_trans_accum);
+        ProcessNode(sc._nodes[i], nullptr, glm::mat4(1.0f), sc, anim_trans_accum);
     }
 
     if(!_joints.empty())
@@ -289,6 +288,13 @@ void DaeConverter::ProcessJoints()
         CalcAbsTransfMatrices();
 }
 
+glm::mat4 DaeConverter::changeMatrixBasis(glm::mat4 const & old_m) const
+{
+    glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
+
+    return up_mat * old_m * glm::transpose(up_mat);
+}
+
 VertexData::Semantic ConverSemantic(DaeGeometry::Semantic sem)
 {
     VertexData::Semantic s = VertexData::Semantic::UNKNOWN;
@@ -376,7 +382,7 @@ void DaeConverter::ProcessMeshes()
                 if(it != _parser._controllers->_skinControllers.end())
                 {
                     skn     = &(*it);
-                    geo_src = skn->_ownerId;
+                    geo_src = skn->_owner_id;
                 }
                 else
                 {
@@ -394,8 +400,8 @@ void DaeConverter::ProcessMeshes()
             // Check that skin has all required arrays
             if(skn != nullptr)
             {
-                if(skn->_jointArray == nullptr || skn->_bindMatArray == nullptr
-                   || skn->_weightArray == nullptr)
+                if(skn->_joint_array == nullptr || skn->_bind_mat_array == nullptr
+                   || skn->_weight_array == nullptr)
                 {
                     std::cout << "Skin controller '" << skn->_id
                               << "' is missing information and is ignored\n";
@@ -417,9 +423,9 @@ void DaeConverter::ProcessMeshes()
             if(skn != nullptr)
             {
                 // Build lookup table
-                for(unsigned int j = 0; j < skn->_jointArray->_stringArray.size(); ++j)
+                for(unsigned int j = 0; j < skn->_joint_array->_stringArray.size(); ++j)
                 {
-                    std::string sid = skn->_jointArray->_stringArray[j];
+                    std::string sid = skn->_joint_array->_stringArray[j];
 
                     joint_lookup.push_back(nullptr);
 
@@ -442,12 +448,12 @@ void DaeConverter::ProcessMeshes()
 
                 // Find bind matrices
                 glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
-                for(unsigned int j = 0; j < skn->_jointArray->_stringArray.size(); ++j)
+                for(unsigned int j = 0; j < skn->_joint_array->_stringArray.size(); ++j)
                 {
                     if(joint_lookup[j] != nullptr)
                     {
                         joint_lookup[j]->_dae_inv_bind_mat =
-                            CreateDAEMatrix(&skn->_bindMatArray->_floatArray[j * 16]);
+                            CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
 
                         // Multiply bind matrices with up matrix
                         joint_lookup[j]->_inv_bind_mat =
@@ -488,13 +494,13 @@ void DaeConverter::ProcessMeshes()
                         {
                             VertexData::WeightsVec vert_weight_vect;
 
-                            for(auto skn_w : skn->_vertWeights[i])
+                            for(auto skn_w : skn->_vert_weights[i])
                             {
                                 VertexData::WeightsVec::Weight tw{0, 1.0f};
 
                                 tw._joint_index =
-                                    FindJointIndex(skn->_jointArray->_stringArray[skn_w._joint]);
-                                tw._w = skn->_weightArray->_floatArray[skn_w._weight];
+                                    FindJointIndex(skn->_joint_array->_stringArray[skn_w._joint]);
+                                tw._w = skn->_weight_array->_floatArray[skn_w._weight];
 
                                 vert_weight_vect._weights.push_back(tw);
                             }
@@ -588,8 +594,11 @@ void DaeConverter::ProcessMeshes()
             // Apply bind_shape matrix
             if(skn != nullptr)
             {
-                trans = trans * skn->_bindShapeMat;
+                trans = trans * skn->_bind_shape_mat;
             }
+
+            glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
+            trans            = up_mat * trans;
 
             for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
             {
@@ -801,7 +810,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
             ex_joint.index        = joint->_index;
             ex_joint.name         = joint->_dae_node->_name;
-            ex_joint.inverse_bind = joint->_inv_bind_mat;
+            ex_joint.inverse_bind = changeMatrixBasis(joint->_inv_bind_mat);
 
             if(joint->_parent != nullptr)
             {
@@ -828,15 +837,17 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 for(uint16_t i = 0; i < _frame_count; i++)
                 {
                     // relative matrices
-                    glm::quat rot = glm::quat_cast(joint->_r_frames[i]);
+                    glm::mat4 rel = changeMatrixBasis(joint->_r_frames[i]);
+                    glm::quat rot = glm::quat_cast(rel);
                     rot           = glm::normalize(rot);
                     ex_joint.r_rot.push_back(rot);
 
-                    glm::vec4 transf = glm::column(joint->_r_frames[i], 3);
+                    glm::vec4 transf = glm::column(rel, 3);
                     ex_joint.r_trans.push_back(glm::vec3(transf));
 
                     // absolute matrices
-                    glm::mat4 joint_transf = joint->_a_frames[i] * ex_joint.inverse_bind;
+                    glm::mat4 abs          = changeMatrixBasis(joint->_a_frames[i]);
+                    glm::mat4 joint_transf = abs * ex_joint.inverse_bind;
                     rot                    = glm::quat_cast(joint_transf);
                     rot                    = glm::normalize(rot);
                     ex_joint.a_rot.push_back(rot);

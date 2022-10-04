@@ -124,6 +124,8 @@ protected:
     void ProcessMeshes();
     void ProcessJoints();
 
+    glm::mat4 changeMatrixBasis(glm::mat4 const & old_m) const;
+
 public:
     DaeConverter(DaeParser const & parser);
     virtual ~DaeConverter() override = default;
