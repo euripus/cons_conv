@@ -13,9 +13,9 @@ struct DaeSampler
 struct DaeChannel
 {
     DaeSampler * _source;
-    std::string  _nodeId;             // Target node
-    std::string  _transSid;           // Target transformation channel
-    int          _transValuesIndex;   // Index in values of node transformation (-1 for no index)
+    std::string  _node_id;              // Target node
+    std::string  _trans_sid;            // Target transformation channel
+    int          _trans_values_index;   // Index in values of node transformation (-1 for no index)
 };
 
 struct DaeAnimation
@@ -36,8 +36,8 @@ protected:
 struct DaeLibraryAnimations
 {
     std::vector<DaeAnimation> _animations;
-    unsigned int              _maxFrameCount;
-    float                     _maxAnimTime;
+    unsigned int              _max_frame_count;
+    float                     _max_anim_time;
 
     void         Parse(pugi::xml_node const & rootNode);
     DaeSampler * FindAnimForTarget(std::string const & nodeId, int * index) const;

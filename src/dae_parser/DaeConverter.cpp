@@ -56,12 +56,12 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_sta
  *
  ******************************************************************************/
 DaeConverter::DaeConverter(DaeParser const & parser) :
-    _parser(parser), _frame_count(0), _max_anim_time(0.0f), _skin_transform(1.0f)
+    m_parser(parser), m_frame_count(0), m_max_anim_time(0.0f), m_skin_transform(1.0f)
 {}
 
 void DaeConverter::Convert()
 {
-    if(_parser._v_scenes->_scenes.empty())
+    if(m_parser._v_scenes->_scenes.empty())
     {
         std::stringstream ss;
         ss << "Error: No scenes to export"
@@ -70,7 +70,7 @@ void DaeConverter::Convert()
         throw std::runtime_error(ss.str());
     }
 
-    for(auto & sc : _parser._v_scenes->_scenes)
+    for(auto & sc : m_parser._v_scenes->_scenes)
     {
         ConvertScene(sc);
     }
@@ -87,14 +87,14 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         throw std::runtime_error(ss.str());
     }
 
-    if(!_parser._anim->_animations.empty())
+    if(!m_parser._anim->_animations.empty())
     {
-        _frame_count   = _parser._anim->_maxFrameCount;
-        _max_anim_time = _parser._anim->_maxAnimTime;
+        m_frame_count   = m_parser._anim->_max_frame_count;
+        m_max_anim_time = m_parser._anim->_max_anim_time;
     }
 
     std::vector<glm::mat4> anim_trans_accum;
-    for(unsigned int i = 0; i < _frame_count; ++i)
+    for(unsigned int i = 0; i < m_frame_count; ++i)
         anim_trans_accum.push_back(glm::mat4(1.0f));
 
     for(size_t i = 0; i < sc._nodes.size(); i++)
@@ -102,11 +102,14 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         ProcessNode(sc._nodes[i], nullptr, glm::mat4(1.0f), sc, anim_trans_accum);
     }
 
-    if(!_joints.empty())
+    if(!m_joints.empty())
         ProcessJoints();
 
-    if(!_meshes.empty())
+    if(!m_meshes.empty())
         ProcessMeshes();
+
+    if(!m_joints.empty())
+        calSkinningMatrices();
 }
 
 SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 trans_accum,
@@ -139,12 +142,12 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(first_joint_enter)
         {
             first_joint_enter = false;
-            _skin_transform   = trans_accum;
+            m_skin_transform  = trans_accum;
             jnt->_is_root     = true;
         }
 
         scene_node = jnt.get();
-        _joints.push_back(std::move(jnt));
+        m_joints.push_back(std::move(jnt));
     }
     else
     {
@@ -155,7 +158,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
             mesh->_parent   = parent;
 
             scene_node = mesh.get();
-            _meshes.push_back(std::move(mesh));
+            m_meshes.push_back(std::move(mesh));
         }
     }
 
@@ -164,31 +167,31 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         scene_node->_rel_transf = rel_mat;
 
         if(parent != nullptr)
-            scene_node->_transf = scene_node->_rel_transf * parent->_transf;
+            scene_node->_transf = parent->_transf * scene_node->_rel_transf;   /// tr order
         else
-            scene_node->_transf = scene_node->_rel_transf * trans_accum;
+            scene_node->_transf = trans_accum * scene_node->_rel_transf;   /// tr order
 
         trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        trans_accum = rel_mat * trans_accum;
+        trans_accum = trans_accum * rel_mat;   /// tr order
     }
 
     // Animation
-    for(uint32_t i = 0; i < _frame_count; ++i)
+    for(uint32_t i = 0; i < m_frame_count; ++i)
     {
         glm::mat4 mat = GetNodeTransform(node, scene_node, i);
         if(scene_node != nullptr)
         {
             if(scene_node->_parent == nullptr)
-                mat = mat * anim_trans_accum[i];
+                mat = anim_trans_accum[i] * mat;   /// tr order
 
             scene_node->_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0);
         }
         else
-            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node
+            anim_trans_accum[i] = anim_trans_accum[i] * mat;   // Pure transformation node /// tr order
     }
 
     for(auto & chd : node._children)
@@ -207,17 +210,17 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
 {
     int          tr_index = -1;
     glm::mat4    tr       = glm::mat4(1.0);
-    DaeSampler * sampler  = _parser._anim->FindAnimForTarget(node._id, &tr_index);
+    DaeSampler * sampler  = m_parser._anim->FindAnimForTarget(node._id, &tr_index);
 
     if(sampler != nullptr)
     {
-        if(sampler->_output->_floatArray.size() == _frame_count * 16)
+        if(sampler->_output->_floatArray.size() == m_frame_count * 16)
         {
             tr = CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]);
 
             if(scene_node != nullptr && scene_node->_joint
                && static_cast<JointNode const *>(scene_node)->_is_root)
-                tr = tr * _skin_transform;
+                tr = m_skin_transform * tr;   /// tr order
         }
         else
         {
@@ -232,7 +235,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
     {
         // If no animation data is found, use standard transformation
         if(scene_node != nullptr)
-            tr = scene_node->_transf;
+            tr = scene_node->_rel_transf;
         else
             tr = CreateTransformMatrix(node._trans_stack);
     }
@@ -247,7 +250,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
             par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(nd->_r_frames[i] * par_tr);
+        nd->_a_frames.push_back(par_tr * nd->_r_frames[i]);   /// tr order
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -259,16 +262,16 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
             ss << "Error: Armature has mesh node" << std::endl;
             throw std::runtime_error(ss.str());
         }
-        CalcJointFrame(chd, nd);
+        CalcJointFrame(chd, nd);   /// tr order
     }
 }
 
 void DaeConverter::CalcAbsTransfMatrices()
 {
-    auto it = std::find_if(_joints.begin(), _joints.end(), [](std::unique_ptr<JointNode> const & nd) -> bool {
-        return nd->_parent == nullptr;
-    });
-    if(it != _joints.end())
+    auto it =
+        std::find_if(m_joints.begin(), m_joints.end(),
+                     [](std::unique_ptr<JointNode> const & nd) -> bool { return nd->_parent == nullptr; });
+    if(it != m_joints.end())
     {
         JointNode * root_joint = (*it).get();
         CalcJointFrame(root_joint, nullptr);
@@ -278,21 +281,33 @@ void DaeConverter::CalcAbsTransfMatrices()
 void DaeConverter::ProcessJoints()
 {
     unsigned int i = 1;
-    for(auto & jnt : _joints)
+    for(auto & jnt : m_joints)
     {
         jnt->_index = i;
         i++;
     }
 
-    if(_frame_count > 0)
+    if(m_frame_count > 0)
         CalcAbsTransfMatrices();
 }
 
 glm::mat4 DaeConverter::changeMatrixBasis(glm::mat4 const & old_m) const
 {
-    glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
+    glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
 
     return up_mat * old_m * glm::transpose(up_mat);
+}
+
+void DaeConverter::calSkinningMatrices()
+{
+    for(auto & jnt : m_joints)
+    {
+        jnt->_r_skinning_frames.resize(jnt->_r_frames.size(), glm::mat4(1.0f));
+        for(uint32_t i = 0; i < jnt->_r_frames.size(); ++i)
+        {
+            jnt->_r_skinning_frames[i] = jnt->_r_frames[i] * jnt->_inv_bind_local;
+        }
+    }
 }
 
 VertexData::Semantic ConverSemantic(DaeGeometry::Semantic sem)
@@ -349,9 +364,9 @@ unsigned int DaeConverter::FindJointIndex(std::string const & name) const
 {
     unsigned int indx = 0;
 
-    auto it = std::find_if(_joints.begin(), _joints.end(),
+    auto it = std::find_if(m_joints.begin(), m_joints.end(),
                            [&name](auto & nd) -> bool { return nd->_dae_node->_sid == name; });
-    if(it != _joints.end())
+    if(it != m_joints.end())
     {
         indx = (*it)->_index;
     }
@@ -361,7 +376,7 @@ unsigned int DaeConverter::FindJointIndex(std::string const & name) const
 
 void DaeConverter::ProcessMeshes()
 {
-    for(auto & msh : _meshes)
+    for(auto & msh : m_meshes)
     {
         glm::mat4 trans = msh->_transf;
 
@@ -371,15 +386,15 @@ void DaeConverter::ProcessMeshes()
 
         for(size_t ins = 0; ins < cur_mesh->_dae_node->_instances.size(); ins++)
         {
-            if(!_parser._controllers->_skinControllers.empty())
+            if(!m_parser._controllers->_skinControllers.empty())
             {
                 std::string skin_id = cur_mesh->_dae_node->_instances[ins]._url;
                 auto        it =
-                    std::find_if(_parser._controllers->_skinControllers.begin(),
-                                 _parser._controllers->_skinControllers.end(),
+                    std::find_if(m_parser._controllers->_skinControllers.begin(),
+                                 m_parser._controllers->_skinControllers.end(),
                                  [&skin_id](DaeSkin const & skn) -> bool { return skn._id == skin_id; });
 
-                if(it != _parser._controllers->_skinControllers.end())
+                if(it != m_parser._controllers->_skinControllers.end())
                 {
                     skn     = &(*it);
                     geo_src = skn->_owner_id;
@@ -409,7 +424,7 @@ void DaeConverter::ProcessMeshes()
                 }
             }
 
-            DaeMeshNode const *      geometry = _parser._geom->Find(geo_src);
+            DaeMeshNode const *      geometry = m_parser._geom->Find(geo_src);
             std::vector<JointNode *> joint_lookup;
 
             if(!geometry)
@@ -430,7 +445,7 @@ void DaeConverter::ProcessMeshes()
                     joint_lookup.push_back(nullptr);
 
                     bool found = false;
-                    for(auto & jnt : _joints)
+                    for(auto & jnt : m_joints)
                     {
                         if(jnt->_dae_node->_sid == sid)
                         {
@@ -447,7 +462,6 @@ void DaeConverter::ProcessMeshes()
                 }
 
                 // Find bind matrices
-                glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
                 for(unsigned int j = 0; j < skn->_joint_array->_stringArray.size(); ++j)
                 {
                     if(joint_lookup[j] != nullptr)
@@ -455,9 +469,16 @@ void DaeConverter::ProcessMeshes()
                         joint_lookup[j]->_dae_inv_bind_mat =
                             CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
 
-                        // Multiply bind matrices with up matrix
-                        joint_lookup[j]->_inv_bind_mat =
-                            joint_lookup[j]->_dae_inv_bind_mat * glm::transpose(up_mat);
+                        joint_lookup[j]->_inv_bind_mat   = joint_lookup[j]->_dae_inv_bind_mat;
+                        joint_lookup[j]->_inv_bind_local = joint_lookup[j]->_inv_bind_mat;
+                        if(joint_lookup[j]->_parent != nullptr)
+                        {
+                            JointNode const * parent =
+                                static_cast<JointNode const *>(joint_lookup[j]->_parent);
+                            joint_lookup[j]->_inv_bind_local =
+                                joint_lookup[j]->_inv_bind_mat
+                                * glm::inverse(parent->_inv_bind_mat);   /// tr order
+                        }
                     }
                 }
             }
@@ -562,7 +583,7 @@ void DaeConverter::ProcessMeshes()
                     assert(poly._triangles[0].size() == inp.size());
 
                     TriGroup      tg;
-                    DaeMaterial * mat = _parser._material->FindMaterial(poly._material_name);
+                    DaeMaterial * mat = m_parser._material->FindMaterial(poly._material_name);
                     if(mat != nullptr)
                     {
                         tg._mat_id = mat->name;
@@ -597,7 +618,7 @@ void DaeConverter::ProcessMeshes()
                 trans = trans * skn->_bind_shape_mat;
             }
 
-            glm::mat4 up_mat = GetConvertMatrix(_parser._up_axis);
+            glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
             trans            = up_mat * trans;
 
             for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
@@ -711,12 +732,12 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 {
     assert(rep.meshes.empty());
 
-    if(_meshes.empty())
+    if(m_meshes.empty())
     {
         std::cout << "WARNING! Nothing to export, no gometry data\n";
     }
 
-    for(auto & mesh : _meshes)
+    for(auto & mesh : m_meshes)
     {
         for(auto & poly : mesh->_polylists)
         {
@@ -798,13 +819,13 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
         }
     }
 
-    if(!_joints.empty())
+    if(!m_joints.empty())
     {
-        rep.num_frames            = _frame_count;
-        rep.frame_rate            = _frame_count / _max_anim_time;
+        rep.num_frames            = m_frame_count;
+        rep.frame_rate            = m_frame_count / m_max_anim_time;
         unsigned int parent_check = 0;
 
-        for(auto & joint : _joints)
+        for(auto & joint : m_joints)
         {
             InternalData::JointNode ex_joint;
 
@@ -832,12 +853,12 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 }
             }
 
-            if(_frame_count > 0)
+            if(m_frame_count > 0)
             {
-                for(uint16_t i = 0; i < _frame_count; i++)
+                for(uint16_t i = 0; i < m_frame_count; i++)
                 {
-                    // relative matrices
-                    glm::mat4 rel = changeMatrixBasis(joint->_r_frames[i]);
+                    // relative skinning matrices
+                    glm::mat4 rel = changeMatrixBasis(joint->_r_skinning_frames[i]);
                     glm::quat rot = glm::quat_cast(rel);
                     rot           = glm::normalize(rot);
                     ex_joint.r_rot.push_back(rot);
@@ -863,9 +884,9 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
     rep.CalculateBBoxes();
 
-    if(!_parser._material->materials.empty())
+    if(!m_parser._material->materials.empty())
     {
-        for(auto & mat : _parser._material->materials)
+        for(auto & mat : m_parser._material->materials)
         {
             if(!mat.used)
                 continue;

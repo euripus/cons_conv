@@ -27,10 +27,10 @@ DaeSampler * DaeAnimation::FindAnimForTarget(std::string const & nodeId, int * t
 
     for(auto & chn : _channels)
     {
-        if(chn._nodeId == nodeId)
+        if(chn._node_id == nodeId)
         {
             if(transValuesIndex != nullptr)
-                *transValuesIndex = chn._transValuesIndex;
+                *transValuesIndex = chn._trans_values_index;
             return chn._source;
         }
     }
@@ -97,60 +97,60 @@ void DaeAnimation::Parse(pugi::xml_node const & animNode, unsigned int & maxFram
     for(pugi::xml_node node1 = animNode.child("channel"); node1; node1 = node1.next_sibling("channel"))
     {
         _channels.emplace_back();
-        DaeChannel & channel      = _channels.back();
-        channel._source           = nullptr;
-        channel._transValuesIndex = -1;
+        DaeChannel & channel        = _channels.back();
+        channel._source             = nullptr;
+        channel._trans_values_index = -1;
 
         // Parse target
         std::string s   = node1.attribute("target").value();
         size_t      pos = s.find("/");
         if(pos != std::string::npos && pos != s.length() - 1)
         {
-            channel._nodeId   = s.substr(0, pos);
-            channel._transSid = s.substr(pos + 1, s.length() - pos);
-            if(channel._transSid.find(".X") != std::string::npos)
+            channel._node_id   = s.substr(0, pos);
+            channel._trans_sid = s.substr(pos + 1, s.length() - pos);
+            if(channel._trans_sid.find(".X") != std::string::npos)
             {
-                channel._transValuesIndex = 0;
-                channel._transSid         = channel._transSid.substr(0, channel._transSid.find("."));
+                channel._trans_values_index = 0;
+                channel._trans_sid          = channel._trans_sid.substr(0, channel._trans_sid.find("."));
             }
-            else if(channel._transSid.find(".Y") != std::string::npos)
+            else if(channel._trans_sid.find(".Y") != std::string::npos)
             {
-                channel._transValuesIndex = 1;
-                channel._transSid         = channel._transSid.substr(0, channel._transSid.find("."));
+                channel._trans_values_index = 1;
+                channel._trans_sid          = channel._trans_sid.substr(0, channel._trans_sid.find("."));
             }
-            else if(channel._transSid.find(".Z") != std::string::npos)
+            else if(channel._trans_sid.find(".Z") != std::string::npos)
             {
-                channel._transValuesIndex = 2;
-                channel._transSid         = channel._transSid.substr(0, channel._transSid.find("."));
+                channel._trans_values_index = 2;
+                channel._trans_sid          = channel._trans_sid.substr(0, channel._trans_sid.find("."));
             }
-            else if(channel._transSid.find(".ANGLE") != std::string::npos)
+            else if(channel._trans_sid.find(".ANGLE") != std::string::npos)
             {
-                channel._transValuesIndex = 3;
-                channel._transSid         = channel._transSid.substr(0, channel._transSid.find("."));
+                channel._trans_values_index = 3;
+                channel._trans_sid          = channel._trans_sid.substr(0, channel._trans_sid.find("."));
             }
-            else if(channel._transSid.find('(') != std::string::npos)
+            else if(channel._trans_sid.find('(') != std::string::npos)
             {
-                size_t index1 = channel._transSid.find('(');
-                size_t index2 = channel._transSid.find('(', index1 + 1);
+                size_t index1 = channel._trans_sid.find('(');
+                size_t index2 = channel._trans_sid.find('(', index1 + 1);
                 if(index2 == std::string::npos)   // We got a vector index
                 {
-                    channel._transValuesIndex =
-                        atoi(channel._transSid
-                                 .substr(index1 + 1, channel._transSid.find(')', index1) - (index1 + 1))
+                    channel._trans_values_index =
+                        atoi(channel._trans_sid
+                                 .substr(index1 + 1, channel._trans_sid.find(')', index1) - (index1 + 1))
                                  .c_str());
                 }
                 else   // We got an array index
                 {
-                    int x = atoi(channel._transSid
-                                     .substr(index1 + 1, channel._transSid.find(')', index1) - (index1 + 1))
+                    int x = atoi(channel._trans_sid
+                                     .substr(index1 + 1, channel._trans_sid.find(')', index1) - (index1 + 1))
                                      .c_str());
-                    int y = atoi(channel._transSid
-                                     .substr(index2 + 1, channel._transSid.find(')', index2) - (index2 + 1))
+                    int y = atoi(channel._trans_sid
+                                     .substr(index2 + 1, channel._trans_sid.find(')', index2) - (index2 + 1))
                                      .c_str());
                     // TODO: Is this the correct access order? Maybe collada defines it transposed
-                    channel._transValuesIndex = y * 4 + x;
+                    channel._trans_values_index = y * 4 + x;
                 }
-                channel._transSid = channel._transSid.substr(0, index1);
+                channel._trans_sid = channel._trans_sid.substr(0, index1);
             }
         }
 
@@ -169,7 +169,7 @@ void DaeAnimation::Parse(pugi::xml_node const & animNode, unsigned int & maxFram
             }
         }
 
-        if(channel._nodeId.empty() || channel._transSid.empty() || channel._source == nullptr)
+        if(channel._node_id.empty() || channel._trans_sid.empty() || channel._source == nullptr)
         {
             std::cerr << "Warning: Missing channel attributes or sampler not found" << std::endl;
             _channels.pop_back();
@@ -189,7 +189,7 @@ void DaeAnimation::Parse(pugi::xml_node const & animNode, unsigned int & maxFram
  *******************************************************************************/
 void DaeLibraryAnimations::Parse(pugi::xml_node const & rootNode)
 {
-    _maxFrameCount = 0;
+    _max_frame_count = 0;
 
     pugi::xml_node node1 = rootNode.child("library_animations");
     if(node1.empty())
@@ -198,7 +198,7 @@ void DaeLibraryAnimations::Parse(pugi::xml_node const & rootNode)
     for(pugi::xml_node node2 = node1.child("animation"); node2; node2 = node2.next_sibling("animation"))
     {
         _animations.emplace_back();
-        _animations.back().Parse(node2, _maxFrameCount, _maxAnimTime);
+        _animations.back().Parse(node2, _max_frame_count, _max_anim_time);
     }
 }
 
