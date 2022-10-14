@@ -173,15 +173,15 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         scene_node->_rel_transf = rel_mat;
 
         if(parent != nullptr)
-            scene_node->_transf = parent->_transf * scene_node->_rel_transf;   /// tr order
+            scene_node->_transf = scene_node->_rel_transf * parent->_transf;   /// tr order
         else
-            scene_node->_transf = trans_accum * scene_node->_rel_transf;   /// tr order
+            scene_node->_transf = scene_node->_rel_transf * trans_accum;   /// tr order
 
         trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        trans_accum = trans_accum * rel_mat;   /// tr order
+        trans_accum = rel_mat * trans_accum;   /// tr order
     }
 
     // Animation
@@ -191,13 +191,13 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(scene_node != nullptr)
         {
             if(scene_node->_parent == nullptr)
-                mat = anim_trans_accum[i] * mat;   /// tr order
+                mat = mat * anim_trans_accum[i];   /// tr order
 
             scene_node->_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
-            anim_trans_accum[i] = anim_trans_accum[i] * mat;   // Pure transformation node /// tr order
+            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node /// tr order
     }
 
     for(auto & chd : node._children)
@@ -226,7 +226,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
 
             if(scene_node != nullptr && scene_node->_joint
                && dynamic_cast<JointNode const *>(scene_node)->_is_root)
-                tr = m_skin_transform * tr;   /// tr order
+                tr = tr * m_skin_transform;   /// tr order
         }
         else
         {
@@ -256,7 +256,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
             par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(par_tr * nd->_r_frames[i]);   /// tr order
+        nd->_a_frames.push_back(nd->_r_frames[i] * par_tr);   /// tr order
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -268,7 +268,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
             ss << "Error: Armature has mesh node" << std::endl;
             throw std::runtime_error(ss.str());
         }
-        CalcJointFrame(chd, nd);   /// tr order
+        CalcJointFrame(chd, nd);
     }
 }
 
@@ -311,7 +311,7 @@ void DaeConverter::calSkinningMatrices()
         jnt->_r_skinning_frames.resize(jnt->_r_frames.size(), glm::mat4(1.0f));
         for(uint32_t i = 0; i < jnt->_r_frames.size(); ++i)
         {
-            jnt->_r_skinning_frames[i] = jnt->_r_frames[i] * jnt->_inv_bind_local;
+            jnt->_r_skinning_frames[i] = jnt->_inv_bind_local * jnt->_r_frames[i];
         }
     }
 }
@@ -481,8 +481,8 @@ void DaeConverter::ProcessMeshes()
                             JointNode const * parent =
                                 dynamic_cast<JointNode const *>(joint_lookup[j]->_parent);
                             joint_lookup[j]->_inv_bind_local =
-                                glm::inverse(parent->_inv_bind_mat)
-                                * joint_lookup[j]->_inv_bind_mat;   /// tr order
+                                joint_lookup[j]->_inv_bind_mat
+                                * glm::inverse(parent->_inv_bind_mat);   /// tr order
                         }
                     }
                 }
@@ -620,11 +620,11 @@ void DaeConverter::ProcessMeshes()
             // Apply bind_shape matrix
             if(skn != nullptr)
             {
-                trans = trans * skn->_bind_shape_mat;
+                trans = trans * skn->_bind_shape_mat;   /// tr order
             }
 
             glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
-            trans            = up_mat * trans;
+            trans            = trans * up_mat;   /// tr order
 
             for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
             {
@@ -730,6 +730,7 @@ InternalData::WeightsVec GetWeightsForVertex(VertexData::WeightsVec const & wvec
         temp_weight.w           = w._w;
         wv.push_back(temp_weight);
     }
+
     return wv;
 }
 
@@ -826,11 +827,11 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
     if(!m_joints.empty())
     {
-        rep.num_frames            = m_frame_count;
-        rep.frame_rate            = m_frame_count / m_max_anim_time;
-        unsigned int parent_check = 0;
+        rep.num_frames        = m_frame_count;
+        rep.frame_rate        = m_frame_count / m_max_anim_time;
+        uint32_t parent_check = 0;
 
-        for(auto & joint : m_joints)
+        for(auto const & joint : m_joints)
         {
             InternalData::JointNode ex_joint;
 
@@ -840,8 +841,8 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
             if(joint->_parent != nullptr)
             {
-                JointNode * parent = dynamic_cast<JointNode *>(joint->_parent);
-                ex_joint.parent    = parent->_index;
+                JointNode const * parent = dynamic_cast<JointNode const *>(joint->_parent);
+                ex_joint.parent          = parent->_index;
             }
             else
             {
@@ -873,7 +874,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
                     // absolute matrices
                     glm::mat4 abs          = changeMatrixBasis(joint->_a_frames[i]);
-                    glm::mat4 joint_transf = abs * ex_joint.inverse_bind;
+                    glm::mat4 joint_transf = ex_joint.inverse_bind * abs;
                     rot                    = glm::quat_cast(joint_transf);
                     rot                    = glm::normalize(rot);
                     ex_joint.a_rot.push_back(rot);
@@ -891,7 +892,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
     if(!m_parser._material->materials.empty())
     {
-        for(auto & mat : m_parser._material->materials)
+        for(auto const & mat : m_parser._material->materials)
         {
             if(!mat.used)
                 continue;
