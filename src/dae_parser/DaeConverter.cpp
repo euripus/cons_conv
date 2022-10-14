@@ -12,6 +12,9 @@
 #include <sstream>
 #include <stdexcept>
 
+// glm::to_string
+#include <glm/gtx/string_cast.hpp>
+
 /******************************************************************************
  *
  ******************************************************************************/
@@ -310,7 +313,7 @@ void DaeConverter::calSkinningMatrices()
     }
 }
 
-VertexData::Semantic ConverSemantic(DaeGeometry::Semantic sem)
+VertexData::Semantic ConvertSemantic(DaeGeometry::Semantic sem)
 {
     VertexData::Semantic s = VertexData::Semantic::UNKNOWN;
 
@@ -466,18 +469,17 @@ void DaeConverter::ProcessMeshes()
                 {
                     if(joint_lookup[j] != nullptr)
                     {
-                        joint_lookup[j]->_dae_inv_bind_mat =
+                        joint_lookup[j]->_inv_bind_mat =
                             CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
 
-                        joint_lookup[j]->_inv_bind_mat   = joint_lookup[j]->_dae_inv_bind_mat;
                         joint_lookup[j]->_inv_bind_local = joint_lookup[j]->_inv_bind_mat;
                         if(joint_lookup[j]->_parent != nullptr)
                         {
                             JointNode const * parent =
-                                static_cast<JointNode const *>(joint_lookup[j]->_parent);
+                                dynamic_cast<JointNode const *>(joint_lookup[j]->_parent);
                             joint_lookup[j]->_inv_bind_local =
-                                joint_lookup[j]->_inv_bind_mat
-                                * glm::inverse(parent->_inv_bind_mat);   /// tr order
+                                glm::inverse(parent->_inv_bind_mat)
+                                * joint_lookup[j]->_inv_bind_mat;   /// tr order
                         }
                     }
                 }
@@ -537,7 +539,7 @@ void DaeConverter::ProcessMeshes()
                     if(src._paramsPerItem == 2)
                     {
                         VertexData::ChunkVec2 chunk;
-                        chunk._semantic     = ConverSemantic(attr.semantic);
+                        chunk._semantic     = ConvertSemantic(attr.semantic);
                         uint32_t num_vertex = src._floatArray.size() / 2;
 
                         for(uint32_t i = 0; i < num_vertex; ++i)
@@ -555,7 +557,7 @@ void DaeConverter::ProcessMeshes()
                     else
                     {
                         VertexData::ChunkVec3 chunk;
-                        chunk._semantic     = ConverSemantic(attr.semantic);
+                        chunk._semantic     = ConvertSemantic(attr.semantic);
                         uint32_t num_vertex = src._floatArray.size() / 3;
 
                         for(uint32_t i = 0; i < num_vertex; ++i)
@@ -858,7 +860,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 for(uint16_t i = 0; i < m_frame_count; i++)
                 {
                     // relative skinning matrices
-                    glm::mat4 rel = changeMatrixBasis(joint->_r_skinning_frames[i]);
+                    glm::mat4 rel = changeMatrixBasis(joint->_r_frames[i]);
                     glm::quat rot = glm::quat_cast(rel);
                     rot           = glm::normalize(rot);
                     ex_joint.r_rot.push_back(rot);

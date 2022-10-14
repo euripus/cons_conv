@@ -91,7 +91,6 @@ struct MeshNode : public SceneNode
 struct JointNode : public SceneNode
 {
     unsigned int _index;
-    glm::mat4    _dae_inv_bind_mat;
     glm::mat4    _inv_bind_mat;   // inverse bind matrix
     glm::mat4    _inv_bind_local;
     bool         _is_root;
@@ -101,7 +100,6 @@ struct JointNode : public SceneNode
         _joint            = true;
         _is_root          = false;
         _inv_bind_mat     = glm::mat4(1.0f);
-        _dae_inv_bind_mat = glm::mat4(1.0f);
     }
 };
 
