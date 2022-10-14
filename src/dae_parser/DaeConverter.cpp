@@ -59,7 +59,11 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_sta
  *
  ******************************************************************************/
 DaeConverter::DaeConverter(DaeParser const & parser) :
-    m_parser(parser), m_frame_count(0), m_max_anim_time(0.0f), m_skin_transform(1.0f)
+    m_parser(parser),
+    m_frame_count(0),
+    m_max_anim_time(0.0f),
+    m_skin_transform(1.0f),
+    m_first_joint_enter(true)
 {}
 
 void DaeConverter::Convert()
@@ -133,8 +137,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
     glm::mat4 rel_mat = CreateTransformMatrix(node._trans_stack);
 
-    SceneNode * scene_node        = nullptr;
-    static bool first_joint_enter = true;
+    SceneNode * scene_node = nullptr;
 
     if(node._joint)
     {
@@ -142,11 +145,11 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         jnt->_dae_node = &node;
         jnt->_parent   = parent;
 
-        if(first_joint_enter)
+        if(m_first_joint_enter)
         {
-            first_joint_enter = false;
-            m_skin_transform  = trans_accum;
-            jnt->_is_root     = true;
+            m_first_joint_enter = false;
+            m_skin_transform    = trans_accum;
+            jnt->_is_root       = true;
         }
 
         scene_node = jnt.get();
@@ -191,7 +194,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
                 mat = anim_trans_accum[i] * mat;   /// tr order
 
             scene_node->_r_frames.push_back(mat);
-            anim_trans_accum[i] = glm::mat4(1.0);
+            anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
             anim_trans_accum[i] = anim_trans_accum[i] * mat;   // Pure transformation node /// tr order
@@ -222,7 +225,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
             tr = CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]);
 
             if(scene_node != nullptr && scene_node->_joint
-               && static_cast<JointNode const *>(scene_node)->_is_root)
+               && dynamic_cast<JointNode const *>(scene_node)->_is_root)
                 tr = m_skin_transform * tr;   /// tr order
         }
         else

@@ -97,9 +97,9 @@ struct JointNode : public SceneNode
 
     JointNode() : _index(0)
     {
-        _joint            = true;
-        _is_root          = false;
-        _inv_bind_mat     = glm::mat4(1.0f);
+        _joint        = true;
+        _is_root      = false;
+        _inv_bind_mat = glm::mat4(1.0f);
     }
 };
 
@@ -109,6 +109,7 @@ class DaeConverter : public Converter
     uint32_t          m_frame_count;
     float             m_max_anim_time;
     glm::mat4         m_skin_transform;
+    bool              m_first_joint_enter;
 
     std::vector<std::unique_ptr<MeshNode>>  m_meshes;
     std::vector<std::unique_ptr<JointNode>> m_joints;
