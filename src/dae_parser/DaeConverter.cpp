@@ -114,9 +114,11 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
 
     if(!m_meshes.empty())
         ProcessMeshes();
+}
 
-    if(!m_joints.empty())
-        calSkinningMatrices();
+glm::mat4 MultMatrix(glm::mat4 const & a, glm::mat4 const & b)
+{
+    return a * b;
 }
 
 SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 trans_accum,
@@ -173,15 +175,21 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         scene_node->_rel_transf = rel_mat;
 
         if(parent != nullptr)
-            scene_node->_transf = scene_node->_rel_transf * parent->_transf;   /// tr order
+        {
+            scene_node->_transf     = MultMatrix(scene_node->_rel_transf, parent->_transf);   /// tr order
+            scene_node->_dae_transf = parent->_dae_transf * scene_node->_rel_transf;
+        }
         else
-            scene_node->_transf = scene_node->_rel_transf * trans_accum;   /// tr order
+        {
+            scene_node->_transf     = MultMatrix(scene_node->_rel_transf, trans_accum);   /// tr order
+            scene_node->_dae_transf = scene_node->_rel_transf * trans_accum;
+        }
 
         trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        trans_accum = rel_mat * trans_accum;   /// tr order
+        trans_accum = MultMatrix(rel_mat, trans_accum);   /// tr order
     }
 
     // Animation
@@ -191,13 +199,14 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(scene_node != nullptr)
         {
             if(scene_node->_parent == nullptr)
-                mat = mat * anim_trans_accum[i];   /// tr order
+                mat = MultMatrix(mat, anim_trans_accum[i]);   /// tr order
 
             scene_node->_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
-            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node /// tr order
+            anim_trans_accum[i] =
+                MultMatrix(mat, anim_trans_accum[i]);   // Pure transformation node /// tr order
     }
 
     for(auto & chd : node._children)
@@ -226,7 +235,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
 
             if(scene_node != nullptr && scene_node->_joint
                && dynamic_cast<JointNode const *>(scene_node)->_is_root)
-                tr = tr * m_skin_transform;   /// tr order
+                tr = MultMatrix(tr, m_skin_transform);   /// tr order
         }
         else
         {
@@ -256,7 +265,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
             par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(nd->_r_frames[i] * par_tr);   /// tr order
+        nd->_a_frames.push_back(MultMatrix(nd->_r_frames[i], par_tr));   /// tr order
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -302,18 +311,6 @@ glm::mat4 DaeConverter::changeMatrixBasis(glm::mat4 const & old_m) const
     glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
 
     return up_mat * old_m * glm::transpose(up_mat);
-}
-
-void DaeConverter::calSkinningMatrices()
-{
-    for(auto & jnt : m_joints)
-    {
-        jnt->_r_skinning_frames.resize(jnt->_r_frames.size(), glm::mat4(1.0f));
-        for(uint32_t i = 0; i < jnt->_r_frames.size(); ++i)
-        {
-            jnt->_r_skinning_frames[i] = jnt->_inv_bind_local * jnt->_r_frames[i];
-        }
-    }
 }
 
 VertexData::Semantic ConvertSemantic(DaeGeometry::Semantic sem)
@@ -472,32 +469,23 @@ void DaeConverter::ProcessMeshes()
                 {
                     if(joint_lookup[j] != nullptr)
                     {
-                        joint_lookup[j]->_inv_bind_mat =
+                        joint_lookup[j]->_dae_inv_bind =
                             CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
-
-                        joint_lookup[j]->_inv_bind_local = joint_lookup[j]->_inv_bind_mat;
-                        if(joint_lookup[j]->_parent != nullptr)
-                        {
-                            JointNode const * parent =
-                                dynamic_cast<JointNode const *>(joint_lookup[j]->_parent);
-                            joint_lookup[j]->_inv_bind_local =
-                                joint_lookup[j]->_inv_bind_mat
-                                * glm::inverse(parent->_inv_bind_mat);   /// tr order
-                        }
+                        joint_lookup[j]->_inv_bind_mat = glm::inverse(joint_lookup[j]->_transf);
                     }
                 }
             }
 
             // copy vertex data
-            for(auto & attr : geometry->_triGroups[0]._meshes[0]._attributes)
+            for(auto & attr : geometry->_tri_groups[0]._meshes[0]._attributes)
             {
-                if(attr.posSourceIt != geometry->_posSources.end())
+                if(attr.pos_source_it != geometry->_pos_sources.end())
                 {
                     // copy vertex
                     VertexData::ChunkVec3 pos;
                     pos._semantic = VertexData::Semantic::POSITION;
 
-                    auto     pos_src    = (*(*attr.posSourceIt)._posSourceIt);
+                    auto     pos_src    = (*(*attr.pos_source_it)._pos_source_it);
                     uint32_t num_vertex = pos_src._floatArray.size() / pos_src._paramsPerItem;
 
                     for(uint32_t i = 0; i < num_vertex; ++i)
@@ -537,7 +525,7 @@ void DaeConverter::ProcessMeshes()
                 }
                 else
                 {
-                    auto src = *attr.sourceIt;
+                    auto src = *attr.source_it;
 
                     if(src._paramsPerItem == 2)
                     {
@@ -580,9 +568,9 @@ void DaeConverter::ProcessMeshes()
             }
 
             // copy index
-            for(auto & mesh : geometry->_triGroups)
+            for(auto & mesh : geometry->_tri_groups)
             {
-                auto & inp = geometry->_triGroups[0]._meshes[0]._attributes;
+                auto & inp = geometry->_tri_groups[0]._meshes[0]._attributes;
                 for(auto & poly : mesh._meshes)
                 {
                     assert(poly._triangles[0].size() == inp.size());
@@ -620,11 +608,11 @@ void DaeConverter::ProcessMeshes()
             // Apply bind_shape matrix
             if(skn != nullptr)
             {
-                trans = trans * skn->_bind_shape_mat;   /// tr order
+                trans = MultMatrix(trans, skn->_bind_shape_mat);   /// tr order
             }
 
             glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
-            trans            = trans * up_mat;   /// tr order
+            trans            = up_mat * trans;
 
             for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
             {
@@ -885,6 +873,54 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
             }
 
             rep.joints.push_back(std::move(ex_joint));
+
+            // std::cout << glm::to_string(glm::transpose(joint->_dae_inv_bind)) << std::endl;
+            // std::cout << glm::to_string(glm::transpose(joint->_transf)) << std::endl << std::endl;
+        }
+
+        // Apply skinning to vertex
+        for(auto & mesh : rep.meshes)
+        {
+            auto find_joint = [this](uint32_t idx) -> JointNode * {
+                auto it = std::find_if(m_joints.begin(), m_joints.end(),
+                                       [&idx](auto const & joint) -> bool { return joint->_index == idx; });
+
+                if(it != m_joints.end())
+                    return (*it).get();
+                else
+                    return nullptr;
+            };
+
+            for(uint32_t n = 0; n < mesh.pos.size(); ++n)
+            {
+                glm::mat4 vert_trans(0.0f);
+                for(auto const & wg : mesh.weights[n])
+                {
+                    auto const * jnt = find_joint(wg.joint_index);
+                    if(jnt == nullptr)
+                    {
+                        std::stringstream ss;
+                        ss << "Error: not found joint for vertex: " << n
+                           << " with joint index: " << wg.joint_index;
+
+                        throw std::runtime_error(ss.str());
+                    }
+
+                    vert_trans += jnt->_dae_inv_bind * jnt->_dae_transf * wg.w;
+                }
+                vert_trans         = changeMatrixBasis(vert_trans);
+                glm::mat3 norm_mat = glm::mat3(vert_trans);
+
+                glm::vec4 n_pos = vert_trans * glm::vec4(mesh.pos[n], 1.0);
+                mesh.pos[n]     = glm::vec3(n_pos);
+
+                if(!mesh.normal.empty())
+                    mesh.normal[n] = norm_mat * mesh.normal[n];
+                if(!mesh.tangent.empty())
+                    mesh.tangent[n] = norm_mat * mesh.tangent[n];
+                if(!mesh.bitangent.empty())
+                    mesh.bitangent[n] = norm_mat * mesh.bitangent[n];
+            }
         }
     }
 

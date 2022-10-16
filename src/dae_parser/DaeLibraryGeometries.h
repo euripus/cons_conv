@@ -12,10 +12,10 @@
 struct DaeVerticesSource
 {
     std::string                      _id;
-    std::string                      _posSourceId;
-    std::vector<DaeSource>::iterator _posSourceIt;   // position source array
+    std::string                      _pos_source_id;
+    std::vector<DaeSource>::iterator _pos_source_it;   // position source array
 
-    void Parse(pugi::xml_node const & verticesNode);
+    void Parse(pugi::xml_node const & vertices_node);
 };
 
 struct DaeGeometry
@@ -36,9 +36,9 @@ struct DaeGeometry
     struct Input
     {
         Semantic                                 semantic;
-        std::string                              sourceId;
-        std::vector<DaeSource>::iterator         sourceIt;
-        std::vector<DaeVerticesSource>::iterator posSourceIt;   // for VERTEX semantic only
+        std::string                              source_id;
+        std::vector<DaeSource>::iterator         source_it;
+        std::vector<DaeVerticesSource>::iterator pos_source_it;   // for VERTEX semantic only
         int                                      set;   // for TEXCOORD, TEXTANGENT, TEXBINORMAL semantic
         int                                      offset;
     };
@@ -65,7 +65,7 @@ struct DaeGeometry
 
     std::vector<TriangleGroup> _meshes;
 
-    void            Parse(pugi::xml_node const & polylistNode);
+    void            Parse(pugi::xml_node const & polylist_node);
     static Semantic GetSemanticType(char const * str);
 };
 
@@ -75,8 +75,8 @@ struct DaeMeshNode
     std::string                    _id;
     std::string                    _name;
     std::vector<DaeSource>         _sources;
-    std::vector<DaeVerticesSource> _posSources;
-    std::vector<DaeGeometry>       _triGroups;
+    std::vector<DaeVerticesSource> _pos_sources;
+    std::vector<DaeGeometry>       _tri_groups;
 
     void Parse(pugi::xml_node const & geo);
     void CheckInputConsistency() const;

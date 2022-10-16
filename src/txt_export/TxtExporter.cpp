@@ -7,6 +7,9 @@
 #include <sstream>
 #include <stdexcept>
 
+// glm::to_string
+#include <glm/gtx/string_cast.hpp>
+
 TxtExporter::TxtExporter(CmdLineOptions const & cmd)
 {
     geometry     = cmd.geometry;
@@ -197,6 +200,7 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             out << "jnt " << jnt.index << " " << jnt.parent << " " << jnt.name << " " << RoundEps(rot.x)
                 << " " << RoundEps(rot.y) << " " << RoundEps(rot.z) << " " << RoundEps(rot.w) << " "
                 << RoundEps(transf.x) << " " << RoundEps(transf.y) << " " << RoundEps(transf.z) << std::endl;
+            //out << glm::to_string(glm::transpose(jnt.inverse_bind)) << std::endl;
         }
         out << std::endl;
 
@@ -218,10 +222,16 @@ void TxtExporter::WriteFile(std::string const & basic_fname, InternalData const 
             for(auto const & jnt : rep.joints)
             {
                 if(rel_matrices)
+                {
                     out << "jtr " << RoundEps(jnt.r_rot[i].x) << " " << RoundEps(jnt.r_rot[i].y) << " "
                         << RoundEps(jnt.r_rot[i].z) << " " << RoundEps(jnt.r_rot[i].w) << " "
                         << RoundEps(jnt.r_trans[i].x) << " " << RoundEps(jnt.r_trans[i].y) << " "
                         << RoundEps(jnt.r_trans[i].z) << std::endl;
+
+                    //glm::mat4 mt = glm::mat4_cast(jnt.r_rot[i]);
+                    //mt           = glm::column(mt, 3, glm::vec4(jnt.r_trans[i], 1.0f));
+                    //out << glm::to_string(glm::transpose(mt)) << std::endl;
+                }
                 else
                     out << "jtr " << RoundEps(jnt.a_rot[i].x) << " " << RoundEps(jnt.a_rot[i].y) << " "
                         << RoundEps(jnt.a_rot[i].z) << " " << RoundEps(jnt.a_rot[i].w) << " "
