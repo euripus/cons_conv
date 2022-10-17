@@ -60,7 +60,9 @@ struct TriGroup
 
 struct SceneNode
 {
-    bool      _joint;
+    bool _joint;
+    bool _is_joint_root;
+
     glm::mat4 _transf;   // absolute transform - for animation and skin export ONLY. Mesh export not affect.
     glm::mat4 _dae_transf;
     glm::mat4 _rel_transf;   // relative transform -
@@ -73,7 +75,7 @@ struct SceneNode
 
     DaeNode const * _dae_node;
 
-    SceneNode() : _joint(false), _parent(nullptr), _dae_node(nullptr)
+    SceneNode() : _joint(false), _is_joint_root(false), _parent(nullptr), _dae_node(nullptr)
     {
         _transf     = glm::mat4(1.0f);
         _rel_transf = glm::mat4(1.0f);
@@ -94,13 +96,13 @@ struct JointNode : public SceneNode
     unsigned int _index;
     glm::mat4    _inv_bind_mat;   // inverse bind matrix
     glm::mat4    _dae_inv_bind;
-    bool         _is_root;
+    glm::mat4    _inv_bind_local;
 
     JointNode() : _index(0)
     {
-        _joint        = true;
-        _is_root      = false;
-        _inv_bind_mat = glm::mat4(1.0f);
+        _joint          = true;
+        _inv_bind_mat   = glm::mat4(1.0f);
+        _inv_bind_local = glm::mat4(1.0f);
     }
 };
 

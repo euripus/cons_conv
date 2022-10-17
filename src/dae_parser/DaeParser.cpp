@@ -140,7 +140,7 @@ glm::mat4 GetConvertMatrix(DaeParser::UpAxis up)
                        glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     }
 
-    return glm::mat4(1.0f);   // mt;
+    return mt;
 }
 
 glm::mat4 CreateDAEMatrix(float const * m)

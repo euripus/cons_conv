@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -124,6 +126,8 @@ glm::mat4 MultMatrix(glm::mat4 const & a, glm::mat4 const & b)
 SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 trans_accum,
                                       DaeVisualScene const & sc, std::vector<glm::mat4> anim_trans_accum)
 {
+    glm::mat4 rt = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
     // Note: animTransAccum is used for pure transformation nodes of Collada that are no joints or meshes
     if(node._reference)
     {
@@ -151,7 +155,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         {
             m_first_joint_enter = false;
             m_skin_transform    = trans_accum;
-            jnt->_is_root       = true;
+            jnt->_is_joint_root = true;
         }
 
         scene_node = jnt.get();
@@ -174,6 +178,9 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
     {
         scene_node->_rel_transf = rel_mat;
 
+        if(scene_node->_is_joint_root)
+            scene_node->_rel_transf = rt * scene_node->_rel_transf;
+
         if(parent != nullptr)
         {
             scene_node->_transf     = MultMatrix(scene_node->_rel_transf, parent->_transf);   /// tr order
@@ -182,7 +189,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         else
         {
             scene_node->_transf     = MultMatrix(scene_node->_rel_transf, trans_accum);   /// tr order
-            scene_node->_dae_transf = scene_node->_rel_transf * trans_accum;
+            scene_node->_dae_transf = trans_accum * scene_node->_rel_transf;
         }
 
         trans_accum = glm::mat4(1.0f);
@@ -227,15 +234,24 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
     glm::mat4    tr       = glm::mat4(1.0);
     DaeSampler * sampler  = m_parser._anim->FindAnimForTarget(node._id, &tr_index);
 
+    glm::mat4 rt = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
     if(sampler != nullptr)
     {
         if(sampler->_output->_floatArray.size() == m_frame_count * 16)
         {
             tr = CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]);
+//            glm::mat3 rotation(tr);
+//            rotation = glm::transpose(rotation);
+//            glm::mat4 new_tr(rotation);
+//            new_tr = glm::column(new_tr, 3, glm::column(tr, 3));
+//            tr     = new_tr;
 
-            if(scene_node != nullptr && scene_node->_joint
-               && dynamic_cast<JointNode const *>(scene_node)->_is_root)
+            if(scene_node != nullptr && scene_node->_is_joint_root)
+            {
+                tr = rt * tr;
                 tr = MultMatrix(tr, m_skin_transform);   /// tr order
+            }
         }
         else
         {
@@ -250,7 +266,11 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
     {
         // If no animation data is found, use standard transformation
         if(scene_node != nullptr)
+        {
             tr = scene_node->_rel_transf;
+            if(scene_node->_is_joint_root)
+                tr = MultMatrix(tr, m_skin_transform);   /// tr order
+        }
         else
             tr = CreateTransformMatrix(node._trans_stack);
     }
@@ -310,7 +330,7 @@ glm::mat4 DaeConverter::changeMatrixBasis(glm::mat4 const & old_m) const
 {
     glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
 
-    return up_mat * old_m * glm::transpose(up_mat);
+    return old_m;   // glm::transpose(up_mat) * old_m * up_mat;
 }
 
 VertexData::Semantic ConvertSemantic(DaeGeometry::Semantic sem)
@@ -825,7 +845,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
             ex_joint.index        = joint->_index;
             ex_joint.name         = joint->_dae_node->_name;
-            ex_joint.inverse_bind = changeMatrixBasis(joint->_inv_bind_mat);
+            ex_joint.inverse_bind = joint->_inv_bind_mat;
 
             if(joint->_parent != nullptr)
             {
@@ -879,7 +899,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
         }
 
         // Apply skinning to vertex
-        for(auto & mesh : rep.meshes)
+        /*for(auto & mesh : rep.meshes)
         {
             auto find_joint = [this](uint32_t idx) -> JointNode * {
                 auto it = std::find_if(m_joints.begin(), m_joints.end(),
@@ -921,7 +941,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 if(!mesh.bitangent.empty())
                     mesh.bitangent[n] = norm_mat * mesh.bitangent[n];
             }
-        }
+        }*/
     }
 
     rep.CalculateBBoxes();
