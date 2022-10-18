@@ -63,12 +63,11 @@ struct SceneNode
     bool _joint;
     bool _is_joint_root;
 
-    glm::mat4 _transf;   // absolute transform - for animation and skin export ONLY. Mesh export not affect.
-    glm::mat4 _dae_transf;
-    glm::mat4 _rel_transf;   // relative transform -
+    glm::mat4 _transf;       // absolute transform
+    glm::mat4 _rel_transf;   // relative transform
 
-    std::vector<glm::mat4> _r_frames;   // Relative transformation for every frame
-    std::vector<glm::mat4> _a_frames;
+    std::vector<glm::mat4> _r_frames;   // relative transformation for every frame
+    std::vector<glm::mat4> _a_frames;   // absolute transformation for every frame
 
     SceneNode *              _parent;
     std::vector<SceneNode *> _child;
@@ -79,7 +78,6 @@ struct SceneNode
     {
         _transf     = glm::mat4(1.0f);
         _rel_transf = glm::mat4(1.0f);
-        _dae_transf = glm::mat4(1.0f);
     }
 
     virtual ~SceneNode() = default;
@@ -95,14 +93,11 @@ struct JointNode : public SceneNode
 {
     unsigned int _index;
     glm::mat4    _inv_bind_mat;   // inverse bind matrix
-    glm::mat4    _dae_inv_bind;
-    glm::mat4    _inv_bind_local;
 
     JointNode() : _index(0)
     {
-        _joint          = true;
-        _inv_bind_mat   = glm::mat4(1.0f);
-        _inv_bind_local = glm::mat4(1.0f);
+        _joint        = true;
+        _inv_bind_mat = glm::mat4(1.0f);
     }
 };
 
@@ -111,7 +106,6 @@ class DaeConverter : public Converter
     DaeParser const & m_parser;
     uint32_t          m_frame_count;
     float             m_max_anim_time;
-    glm::mat4         m_skin_transform;
     bool              m_first_joint_enter;
 
     std::vector<std::unique_ptr<MeshNode>>  m_meshes;
@@ -127,8 +121,6 @@ protected:
 
     void ProcessMeshes();
     void ProcessJoints();
-
-    glm::mat4 changeMatrixBasis(glm::mat4 const & old_m) const;
 
 public:
     DaeConverter(DaeParser const & parser);

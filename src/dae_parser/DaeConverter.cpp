@@ -61,11 +61,7 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_sta
  *
  ******************************************************************************/
 DaeConverter::DaeConverter(DaeParser const & parser) :
-    m_parser(parser),
-    m_frame_count(0),
-    m_max_anim_time(0.0f),
-    m_skin_transform(1.0f),
-    m_first_joint_enter(true)
+    m_parser(parser), m_frame_count(0), m_max_anim_time(0.0f), m_first_joint_enter(true)
 {}
 
 void DaeConverter::Convert()
@@ -102,13 +98,17 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         m_max_anim_time = m_parser._anim->_max_anim_time;
     }
 
+    glm::mat4 rt = GetConvertMatrix(m_parser._up_axis);
+    // For Z_UP equivalent:
+    // glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
     std::vector<glm::mat4> anim_trans_accum;
     for(unsigned int i = 0; i < m_frame_count; ++i)
-        anim_trans_accum.push_back(glm::mat4(1.0f));
+        anim_trans_accum.push_back(rt);
 
     for(size_t i = 0; i < sc._nodes.size(); i++)
     {
-        ProcessNode(sc._nodes[i], nullptr, glm::mat4(1.0f), sc, anim_trans_accum);
+        ProcessNode(sc._nodes[i], nullptr, rt, sc, anim_trans_accum);
     }
 
     if(!m_joints.empty())
@@ -118,16 +118,9 @@ void DaeConverter::ConvertScene(DaeVisualScene const & sc)
         ProcessMeshes();
 }
 
-glm::mat4 MultMatrix(glm::mat4 const & a, glm::mat4 const & b)
-{
-    return a * b;
-}
-
 SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, glm::mat4 trans_accum,
                                       DaeVisualScene const & sc, std::vector<glm::mat4> anim_trans_accum)
 {
-    glm::mat4 rt = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
     // Note: animTransAccum is used for pure transformation nodes of Collada that are no joints or meshes
     if(node._reference)
     {
@@ -154,7 +147,6 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(m_first_joint_enter)
         {
             m_first_joint_enter = false;
-            m_skin_transform    = trans_accum;
             jnt->_is_joint_root = true;
         }
 
@@ -178,25 +170,20 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
     {
         scene_node->_rel_transf = rel_mat;
 
-        if(scene_node->_is_joint_root)
-            scene_node->_rel_transf = rt * scene_node->_rel_transf;
-
         if(parent != nullptr)
         {
-            scene_node->_transf     = MultMatrix(scene_node->_rel_transf, parent->_transf);   /// tr order
-            scene_node->_dae_transf = parent->_dae_transf * scene_node->_rel_transf;
+            scene_node->_transf = scene_node->_rel_transf * parent->_transf;
         }
         else
         {
-            scene_node->_transf     = MultMatrix(scene_node->_rel_transf, trans_accum);   /// tr order
-            scene_node->_dae_transf = trans_accum * scene_node->_rel_transf;
+            scene_node->_transf = scene_node->_rel_transf * trans_accum;
         }
 
         trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        trans_accum = MultMatrix(rel_mat, trans_accum);   /// tr order
+        trans_accum = rel_mat * trans_accum;
     }
 
     // Animation
@@ -206,14 +193,13 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(scene_node != nullptr)
         {
             if(scene_node->_parent == nullptr)
-                mat = MultMatrix(mat, anim_trans_accum[i]);   /// tr order
+                mat = mat * anim_trans_accum[i];
 
             scene_node->_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
-            anim_trans_accum[i] =
-                MultMatrix(mat, anim_trans_accum[i]);   // Pure transformation node /// tr order
+            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node
     }
 
     for(auto & chd : node._children)
@@ -234,24 +220,11 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
     glm::mat4    tr       = glm::mat4(1.0);
     DaeSampler * sampler  = m_parser._anim->FindAnimForTarget(node._id, &tr_index);
 
-    glm::mat4 rt = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
     if(sampler != nullptr)
     {
         if(sampler->_output->_floatArray.size() == m_frame_count * 16)
         {
             tr = CreateDAEMatrix(&sampler->_output->_floatArray[frame * 16]);
-//            glm::mat3 rotation(tr);
-//            rotation = glm::transpose(rotation);
-//            glm::mat4 new_tr(rotation);
-//            new_tr = glm::column(new_tr, 3, glm::column(tr, 3));
-//            tr     = new_tr;
-
-            if(scene_node != nullptr && scene_node->_is_joint_root)
-            {
-                tr = rt * tr;
-                tr = MultMatrix(tr, m_skin_transform);   /// tr order
-            }
         }
         else
         {
@@ -268,8 +241,6 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
         if(scene_node != nullptr)
         {
             tr = scene_node->_rel_transf;
-            if(scene_node->_is_joint_root)
-                tr = MultMatrix(tr, m_skin_transform);   /// tr order
         }
         else
             tr = CreateTransformMatrix(node._trans_stack);
@@ -285,7 +256,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
             par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(MultMatrix(nd->_r_frames[i], par_tr));   /// tr order
+        nd->_a_frames.push_back(nd->_r_frames[i] * par_tr * nd->_inv_bind_mat);
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -324,13 +295,6 @@ void DaeConverter::ProcessJoints()
 
     if(m_frame_count > 0)
         CalcAbsTransfMatrices();
-}
-
-glm::mat4 DaeConverter::changeMatrixBasis(glm::mat4 const & old_m) const
-{
-    glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
-
-    return old_m;   // glm::transpose(up_mat) * old_m * up_mat;
 }
 
 VertexData::Semantic ConvertSemantic(DaeGeometry::Semantic sem)
@@ -489,8 +453,6 @@ void DaeConverter::ProcessMeshes()
                 {
                     if(joint_lookup[j] != nullptr)
                     {
-                        joint_lookup[j]->_dae_inv_bind =
-                            CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
                         joint_lookup[j]->_inv_bind_mat = glm::inverse(joint_lookup[j]->_transf);
                     }
                 }
@@ -628,11 +590,8 @@ void DaeConverter::ProcessMeshes()
             // Apply bind_shape matrix
             if(skn != nullptr)
             {
-                trans = MultMatrix(trans, skn->_bind_shape_mat);   /// tr order
+                trans = trans * skn->_bind_shape_mat;
             }
-
-            glm::mat4 up_mat = GetConvertMatrix(m_parser._up_axis);
-            trans            = up_mat * trans;
 
             for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
             {
@@ -652,7 +611,7 @@ void DaeConverter::ProcessMeshes()
                                                 << "Result may be incorrect.\n";
                                   }
 
-                                  vt = glm::vec3(tmp.x, tmp.y, tmp.z);
+                                  vt = glm::vec3(tmp);
                               });
             }
         }
@@ -872,7 +831,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 for(uint16_t i = 0; i < m_frame_count; i++)
                 {
                     // relative skinning matrices
-                    glm::mat4 rel = changeMatrixBasis(joint->_r_frames[i]);
+                    glm::mat4 rel = joint->_r_frames[i];
                     glm::quat rot = glm::quat_cast(rel);
                     rot           = glm::normalize(rot);
                     ex_joint.r_rot.push_back(rot);
@@ -881,7 +840,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                     ex_joint.r_trans.push_back(glm::vec3(transf));
 
                     // absolute matrices
-                    glm::mat4 abs          = changeMatrixBasis(joint->_a_frames[i]);
+                    glm::mat4 abs          = joint->_a_frames[i];
                     glm::mat4 joint_transf = ex_joint.inverse_bind * abs;
                     rot                    = glm::quat_cast(joint_transf);
                     rot                    = glm::normalize(rot);
