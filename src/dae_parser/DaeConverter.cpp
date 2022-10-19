@@ -853,54 +853,9 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
             rep.joints.push_back(std::move(ex_joint));
 
-            // std::cout << glm::to_string(glm::transpose(joint->_dae_inv_bind)) << std::endl;
+            // std::cout << glm::to_string(glm::transpose(joint->_inv_bind)) << std::endl;
             // std::cout << glm::to_string(glm::transpose(joint->_transf)) << std::endl << std::endl;
         }
-
-        // Apply skinning to vertex
-        /*for(auto & mesh : rep.meshes)
-        {
-            auto find_joint = [this](uint32_t idx) -> JointNode * {
-                auto it = std::find_if(m_joints.begin(), m_joints.end(),
-                                       [&idx](auto const & joint) -> bool { return joint->_index == idx; });
-
-                if(it != m_joints.end())
-                    return (*it).get();
-                else
-                    return nullptr;
-            };
-
-            for(uint32_t n = 0; n < mesh.pos.size(); ++n)
-            {
-                glm::mat4 vert_trans(0.0f);
-                for(auto const & wg : mesh.weights[n])
-                {
-                    auto const * jnt = find_joint(wg.joint_index);
-                    if(jnt == nullptr)
-                    {
-                        std::stringstream ss;
-                        ss << "Error: not found joint for vertex: " << n
-                           << " with joint index: " << wg.joint_index;
-
-                        throw std::runtime_error(ss.str());
-                    }
-
-                    vert_trans += jnt->_dae_inv_bind * jnt->_dae_transf * wg.w;
-                }
-                vert_trans         = changeMatrixBasis(vert_trans);
-                glm::mat3 norm_mat = glm::mat3(vert_trans);
-
-                glm::vec4 n_pos = vert_trans * glm::vec4(mesh.pos[n], 1.0);
-                mesh.pos[n]     = glm::vec3(n_pos);
-
-                if(!mesh.normal.empty())
-                    mesh.normal[n] = norm_mat * mesh.normal[n];
-                if(!mesh.tangent.empty())
-                    mesh.tangent[n] = norm_mat * mesh.tangent[n];
-                if(!mesh.bitangent.empty())
-                    mesh.bitangent[n] = norm_mat * mesh.bitangent[n];
-            }
-        }*/
     }
 
     rep.CalculateBBoxes();
