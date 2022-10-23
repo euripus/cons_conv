@@ -172,18 +172,18 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
         if(parent != nullptr)
         {
-            scene_node->_transf = scene_node->_rel_transf * parent->_transf;
+            scene_node->_transf = parent->_transf * scene_node->_rel_transf;
         }
         else
         {
-            scene_node->_transf = scene_node->_rel_transf * trans_accum;
+            scene_node->_transf = trans_accum * scene_node->_rel_transf;
         }
 
         trans_accum = glm::mat4(1.0f);
     }
     else
     {
-        trans_accum = rel_mat * trans_accum;
+        trans_accum = trans_accum * rel_mat;
     }
 
     // Animation
@@ -193,13 +193,13 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         if(scene_node != nullptr)
         {
             if(scene_node->_parent == nullptr)
-                mat = mat * anim_trans_accum[i];
+                mat = anim_trans_accum[i] * mat;
 
             scene_node->_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
-            anim_trans_accum[i] = mat * anim_trans_accum[i];   // Pure transformation node
+            anim_trans_accum[i] = anim_trans_accum[i] * mat;   // Pure transformation node
     }
 
     for(auto & chd : node._children)
@@ -256,7 +256,7 @@ void CalcJointFrame(JointNode * nd, JointNode * parent)
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
             par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(nd->_r_frames[i] * par_tr * nd->_inv_bind_mat);
+        nd->_a_frames.push_back(par_tr * nd->_r_frames[i] * nd->_inv_bind_mat);
     }
 
     for(uint32_t i = 0; i < nd->_child.size(); i++)
@@ -841,7 +841,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
                     // absolute matrices
                     glm::mat4 abs          = joint->_a_frames[i];
-                    glm::mat4 joint_transf = ex_joint.inverse_bind * abs;
+                    glm::mat4 joint_transf = abs;
                     rot                    = glm::quat_cast(joint_transf);
                     rot                    = glm::normalize(rot);
                     ex_joint.a_rot.push_back(rot);
