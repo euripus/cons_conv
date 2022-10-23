@@ -28,8 +28,8 @@ struct VertexData
     template<typename T>
     struct Chunk
     {
-        Semantic       _semantic;
-        std::vector<T> _data;
+        Semantic       m_semantic;
+        std::vector<T> m_data;
     };
 
     using ChunkVec3 = Chunk<glm::vec3>;
@@ -38,46 +38,45 @@ struct VertexData
     {
         struct Weight
         {
-            unsigned int _joint_index;
-            float        _w;
+            unsigned int m_joint_index;
+            float        m_w;
         };
 
-        std::vector<Weight> _weights;
+        std::vector<Weight> m_weights;
     };
 
-    std::vector<ChunkVec2>  _sources_vec2;
-    std::vector<ChunkVec3>  _sources_vec3;
-    std::vector<WeightsVec> _wght;
+    std::vector<ChunkVec2>  m_sources_vec2;
+    std::vector<ChunkVec3>  m_sources_vec3;
+    std::vector<WeightsVec> m_wght;
 };
 
 struct TriGroup
 {
     using VertexAttribut = std::vector<unsigned int>;
 
-    std::vector<VertexAttribut> _indices;   // _indices.size() == _sources_vec3.size() + _sources_vec2.size()
-    std::string                 _mat_id;
+    std::vector<VertexAttribut> m_indices;   // _indices.size() == _sources_vec3.size() + _sources_vec2.size()
+    std::string                 m_mat_id;
 };
 
 struct SceneNode
 {
-    bool _joint;
-    bool _is_joint_root;
+    bool m_joint;
 
-    glm::mat4 _transf;       // absolute transform
-    glm::mat4 _rel_transf;   // relative transform
+    glm::mat4 m_abs_transf;   // absolute transform
+    glm::mat4 m_rel_transf;   // relative transform
 
-    std::vector<glm::mat4> _r_frames;   // relative transformation for every frame
-    std::vector<glm::mat4> _a_frames;   // absolute transformation for every frame
+    std::vector<glm::mat4> m_r_frames;   // relative transformation for every frame
+    std::vector<glm::mat4> m_a_frames;   // absolute transformation for every frame
 
-    SceneNode *              _parent;
-    std::vector<SceneNode *> _child;
+    SceneNode *              m_parent;
+    std::vector<SceneNode *> m_child;
 
-    DaeNode const * _dae_node;
+    DaeNode const * m_dae_node;
 
-    SceneNode() : _joint(false), _is_joint_root(false), _parent(nullptr), _dae_node(nullptr)
+    SceneNode() : m_joint(false), m_parent(nullptr), m_dae_node(nullptr)
     {
-        _transf     = glm::mat4(1.0f);
-        _rel_transf = glm::mat4(1.0f);
+        m_abs_transf = glm::mat4(1.0f);
+        m_rel_transf = glm::mat4(1.0f);
     }
 
     virtual ~SceneNode() = default;
@@ -85,19 +84,19 @@ struct SceneNode
 
 struct MeshNode : public SceneNode
 {
-    VertexData            _vertices;
-    std::vector<TriGroup> _polylists;
+    VertexData            m_vertices;
+    std::vector<TriGroup> m_polylists;
 };
 
 struct JointNode : public SceneNode
 {
-    unsigned int _index;
-    glm::mat4    _inv_bind_mat;   // inverse bind matrix
+    unsigned int m_index;
+    glm::mat4    m_inv_bind_mat;   // inverse bind matrix
 
-    JointNode() : _index(0)
+    JointNode() : m_index(0)
     {
-        _joint        = true;
-        _inv_bind_mat = glm::mat4(1.0f);
+        m_joint        = true;
+        m_inv_bind_mat = glm::mat4(1.0f);
     }
 };
 
@@ -106,7 +105,6 @@ class DaeConverter : public Converter
     DaeParser const & m_parser;
     uint32_t          m_frame_count;
     float             m_max_anim_time;
-    bool              m_first_joint_enter;
 
     std::vector<std::unique_ptr<MeshNode>>  m_meshes;
     std::vector<std::unique_ptr<JointNode>> m_joints;

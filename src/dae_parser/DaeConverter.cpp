@@ -61,7 +61,7 @@ glm::mat4 CreateTransformMatrix(std::vector<DaeTransformation> const & trans_sta
  *
  ******************************************************************************/
 DaeConverter::DaeConverter(DaeParser const & parser) :
-    m_parser(parser), m_frame_count(0), m_max_anim_time(0.0f), m_first_joint_enter(true)
+    m_parser(parser), m_frame_count(0), m_max_anim_time(0.0f)
 {}
 
 void DaeConverter::Convert()
@@ -140,15 +140,9 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
     if(node._joint)
     {
-        auto jnt       = std::make_unique<JointNode>();
-        jnt->_dae_node = &node;
-        jnt->_parent   = parent;
-
-        if(m_first_joint_enter)
-        {
-            m_first_joint_enter = false;
-            jnt->_is_joint_root = true;
-        }
+        auto jnt        = std::make_unique<JointNode>();
+        jnt->m_dae_node = &node;
+        jnt->m_parent   = parent;
 
         scene_node = jnt.get();
         m_joints.push_back(std::move(jnt));
@@ -157,9 +151,9 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
     {
         if(!node._instances.empty())
         {
-            auto mesh       = std::make_unique<MeshNode>();
-            mesh->_dae_node = &node;
-            mesh->_parent   = parent;
+            auto mesh        = std::make_unique<MeshNode>();
+            mesh->m_dae_node = &node;
+            mesh->m_parent   = parent;
 
             scene_node = mesh.get();
             m_meshes.push_back(std::move(mesh));
@@ -168,15 +162,15 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
 
     if(scene_node != nullptr)
     {
-        scene_node->_rel_transf = rel_mat;
+        scene_node->m_rel_transf = rel_mat;
 
         if(parent != nullptr)
         {
-            scene_node->_transf = parent->_transf * scene_node->_rel_transf;
+            scene_node->m_abs_transf = parent->m_abs_transf * scene_node->m_rel_transf;
         }
         else
         {
-            scene_node->_transf = trans_accum * scene_node->_rel_transf;
+            scene_node->m_abs_transf = trans_accum * scene_node->m_rel_transf;
         }
 
         trans_accum = glm::mat4(1.0f);
@@ -192,10 +186,10 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         glm::mat4 mat = GetNodeTransform(node, scene_node, i);
         if(scene_node != nullptr)
         {
-            if(scene_node->_parent == nullptr)
+            if(scene_node->m_parent == nullptr)
                 mat = anim_trans_accum[i] * mat;
 
-            scene_node->_r_frames.push_back(mat);
+            scene_node->m_r_frames.push_back(mat);
             anim_trans_accum[i] = glm::mat4(1.0f);
         }
         else
@@ -207,7 +201,7 @@ SceneNode * DaeConverter::ProcessNode(DaeNode const & node, SceneNode * parent, 
         SceneNode * par_node = scene_node != nullptr ? scene_node : parent;
         SceneNode * snd      = ProcessNode(*chd, par_node, trans_accum, sc, anim_trans_accum);
         if(snd != nullptr && par_node != nullptr)
-            par_node->_child.push_back(snd);
+            par_node->m_child.push_back(snd);
     }
 
     return scene_node;
@@ -240,7 +234,7 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
         // If no animation data is found, use standard transformation
         if(scene_node != nullptr)
         {
-            tr = scene_node->_rel_transf;
+            tr = scene_node->m_rel_transf;
         }
         else
             tr = CreateTransformMatrix(node._trans_stack);
@@ -251,17 +245,17 @@ glm::mat4 DaeConverter::GetNodeTransform(DaeNode const & node, SceneNode const *
 
 void CalcJointFrame(JointNode * nd, JointNode * parent)
 {
-    for(uint32_t i = 0; i < nd->_r_frames.size(); i++)
+    for(uint32_t i = 0; i < nd->m_r_frames.size(); i++)
     {
         glm::mat4 par_tr = glm::mat4(1.0);
         if(parent != nullptr)
-            par_tr = parent->_a_frames[i];
-        nd->_a_frames.push_back(par_tr * nd->_r_frames[i] * nd->_inv_bind_mat);
+            par_tr = parent->m_a_frames[i];
+        nd->m_a_frames.push_back(par_tr * nd->m_r_frames[i]);
     }
 
-    for(uint32_t i = 0; i < nd->_child.size(); i++)
+    for(uint32_t i = 0; i < nd->m_child.size(); i++)
     {
-        auto chd = dynamic_cast<JointNode *>(nd->_child[i]);
+        auto chd = dynamic_cast<JointNode *>(nd->m_child[i]);
         if(chd == nullptr)
         {
             std::stringstream ss;
@@ -276,7 +270,7 @@ void DaeConverter::CalcAbsTransfMatrices()
 {
     auto it =
         std::find_if(m_joints.begin(), m_joints.end(),
-                     [](std::unique_ptr<JointNode> const & nd) -> bool { return nd->_parent == nullptr; });
+                     [](std::unique_ptr<JointNode> const & nd) -> bool { return nd->m_parent == nullptr; });
     if(it != m_joints.end())
     {
         JointNode * root_joint = (*it).get();
@@ -289,7 +283,7 @@ void DaeConverter::ProcessJoints()
     unsigned int i = 1;
     for(auto & jnt : m_joints)
     {
-        jnt->_index = i;
+        jnt->m_index = i;
         i++;
     }
 
@@ -352,10 +346,10 @@ unsigned int DaeConverter::FindJointIndex(std::string const & name) const
     unsigned int indx = 0;
 
     auto it = std::find_if(m_joints.begin(), m_joints.end(),
-                           [&name](auto & nd) -> bool { return nd->_dae_node->_sid == name; });
+                           [&name](auto & nd) -> bool { return nd->m_dae_node->_sid == name; });
     if(it != m_joints.end())
     {
-        indx = (*it)->_index;
+        indx = (*it)->m_index;
     }
 
     return indx;
@@ -365,17 +359,17 @@ void DaeConverter::ProcessMeshes()
 {
     for(auto & msh : m_meshes)
     {
-        glm::mat4 trans = msh->_transf;
+        glm::mat4 trans = msh->m_abs_transf;
 
         MeshNode *  cur_mesh = msh.get();
         DaeSkin *   skn      = nullptr;
         std::string geo_src;
 
-        for(size_t ins = 0; ins < cur_mesh->_dae_node->_instances.size(); ins++)
+        for(size_t ins = 0; ins < cur_mesh->m_dae_node->_instances.size(); ins++)
         {
             if(!m_parser._controllers->_skinControllers.empty())
             {
-                std::string skin_id = cur_mesh->_dae_node->_instances[ins]._url;
+                std::string skin_id = cur_mesh->m_dae_node->_instances[ins]._url;
                 auto        it =
                     std::find_if(m_parser._controllers->_skinControllers.begin(),
                                  m_parser._controllers->_skinControllers.end(),
@@ -396,7 +390,7 @@ void DaeConverter::ProcessMeshes()
             }
             else
             {
-                geo_src = cur_mesh->_dae_node->_instances[ins]._url;
+                geo_src = cur_mesh->m_dae_node->_instances[ins]._url;
             }
 
             // Check that skin has all required arrays
@@ -434,7 +428,7 @@ void DaeConverter::ProcessMeshes()
                     bool found = false;
                     for(auto & jnt : m_joints)
                     {
-                        if(jnt->_dae_node->_sid == sid)
+                        if(jnt->m_dae_node->_sid == sid)
                         {
                             joint_lookup[j] = jnt.get();
                             found           = true;
@@ -453,7 +447,9 @@ void DaeConverter::ProcessMeshes()
                 {
                     if(joint_lookup[j] != nullptr)
                     {
-                        joint_lookup[j]->_inv_bind_mat = glm::inverse(joint_lookup[j]->_transf);
+                        // joint_lookup[j]->m_inv_bind_mat =
+                        //     CreateDAEMatrix(&skn->_bind_mat_array->_floatArray[j * 16]);
+                        joint_lookup[j]->m_inv_bind_mat = glm::inverse(joint_lookup[j]->m_abs_transf);
                     }
                 }
             }
@@ -465,7 +461,7 @@ void DaeConverter::ProcessMeshes()
                 {
                     // copy vertex
                     VertexData::ChunkVec3 pos;
-                    pos._semantic = VertexData::Semantic::POSITION;
+                    pos.m_semantic = VertexData::Semantic::POSITION;
 
                     auto     pos_src    = (*(*attr.pos_source_it)._pos_source_it);
                     uint32_t num_vertex = pos_src._floatArray.size() / pos_src._paramsPerItem;
@@ -478,10 +474,10 @@ void DaeConverter::ProcessMeshes()
                         vertex.y = pos_src._floatArray[i * pos_src._paramsPerItem + 1];
                         vertex.z = pos_src._floatArray[i * pos_src._paramsPerItem + 2];
 
-                        pos._data.push_back(vertex);
+                        pos.m_data.push_back(vertex);
                     }
 
-                    cur_mesh->_vertices._sources_vec3.push_back(std::move(pos));
+                    cur_mesh->m_vertices.m_sources_vec3.push_back(std::move(pos));
 
                     if(skn != nullptr)
                     {
@@ -494,14 +490,14 @@ void DaeConverter::ProcessMeshes()
                             {
                                 VertexData::WeightsVec::Weight tw{0, 1.0f};
 
-                                tw._joint_index =
+                                tw.m_joint_index =
                                     FindJointIndex(skn->_joint_array->_stringArray[skn_w._joint]);
-                                tw._w = skn->_weight_array->_floatArray[skn_w._weight];
+                                tw.m_w = skn->_weight_array->_floatArray[skn_w._weight];
 
-                                vert_weight_vect._weights.push_back(tw);
+                                vert_weight_vect.m_weights.push_back(tw);
                             }
 
-                            cur_mesh->_vertices._wght.push_back(vert_weight_vect);
+                            cur_mesh->m_vertices.m_wght.push_back(vert_weight_vect);
                         }
                     }
                 }
@@ -512,7 +508,7 @@ void DaeConverter::ProcessMeshes()
                     if(src._paramsPerItem == 2)
                     {
                         VertexData::ChunkVec2 chunk;
-                        chunk._semantic     = ConvertSemantic(attr.semantic);
+                        chunk.m_semantic    = ConvertSemantic(attr.semantic);
                         uint32_t num_vertex = src._floatArray.size() / 2;
 
                         for(uint32_t i = 0; i < num_vertex; ++i)
@@ -522,15 +518,15 @@ void DaeConverter::ProcessMeshes()
                             vertex.x = src._floatArray[i * 2 + 0];
                             vertex.y = src._floatArray[i * 2 + 1];
 
-                            chunk._data.push_back(vertex);
+                            chunk.m_data.push_back(vertex);
                         }
 
-                        cur_mesh->_vertices._sources_vec2.push_back(std::move(chunk));
+                        cur_mesh->m_vertices.m_sources_vec2.push_back(std::move(chunk));
                     }
                     else
                     {
                         VertexData::ChunkVec3 chunk;
-                        chunk._semantic     = ConvertSemantic(attr.semantic);
+                        chunk.m_semantic    = ConvertSemantic(attr.semantic);
                         uint32_t num_vertex = src._floatArray.size() / 3;
 
                         for(uint32_t i = 0; i < num_vertex; ++i)
@@ -541,10 +537,10 @@ void DaeConverter::ProcessMeshes()
                             vertex.y = src._floatArray[i * 3 + 1];
                             vertex.z = src._floatArray[i * 3 + 2];
 
-                            chunk._data.push_back(vertex);
+                            chunk.m_data.push_back(vertex);
                         }
 
-                        cur_mesh->_vertices._sources_vec3.push_back(std::move(chunk));
+                        cur_mesh->m_vertices.m_sources_vec3.push_back(std::move(chunk));
                     }
                 }
             }
@@ -561,14 +557,14 @@ void DaeConverter::ProcessMeshes()
                     DaeMaterial * mat = m_parser._material->FindMaterial(poly._material_name);
                     if(mat != nullptr)
                     {
-                        tg._mat_id = mat->name;
-                        mat->used  = true;
+                        tg.m_mat_id = mat->name;
+                        mat->used   = true;
                     }
                     else
                     {
                         std::cout << "Warning: Material '" << poly._material_name << "' not found"
                                   << std::endl;
-                        tg._mat_id = poly._material_name;
+                        tg.m_mat_id = poly._material_name;
                     }
 
                     // copy index
@@ -581,9 +577,9 @@ void DaeConverter::ProcessMeshes()
                             index.push_back(tri[i]);
                         }
 
-                        tg._indices.push_back(std::move(index));
+                        tg.m_indices.push_back(std::move(index));
                     }
-                    cur_mesh->_polylists.push_back(std::move(tg));
+                    cur_mesh->m_polylists.push_back(std::move(tg));
                 }
             }
 
@@ -593,10 +589,10 @@ void DaeConverter::ProcessMeshes()
                 trans = trans * skn->_bind_shape_mat;
             }
 
-            for(auto & vec3_array : cur_mesh->_vertices._sources_vec3)
+            for(auto & vec3_array : cur_mesh->m_vertices.m_sources_vec3)
             {
-                std::for_each(vec3_array._data.begin(), vec3_array._data.end(),
-                              [&trans, sem = vec3_array._semantic](glm::vec3 & vt) {
+                std::for_each(vec3_array.m_data.begin(), vec3_array.m_data.end(),
+                              [&trans, sem = vec3_array.m_semantic](glm::vec3 & vt) {
                                   glm::vec4 tmp(0.0f);
                                   if(sem == VertexData::Semantic::POSITION)
                                       tmp = glm::vec4(vt, 1.0f);
@@ -691,10 +687,10 @@ InternalData::WeightsVec GetWeightsForVertex(VertexData::WeightsVec const & wvec
     InternalData::WeightsVec wv;
     InternalData::Weight     temp_weight{0, 0.0f};
 
-    for(auto const & w : wvec._weights)
+    for(auto const & w : wvec.m_weights)
     {
-        temp_weight.joint_index = w._joint_index;
-        temp_weight.w           = w._w;
+        temp_weight.joint_index = w.m_joint_index;
+        temp_weight.w           = w.m_w;
         wv.push_back(temp_weight);
     }
 
@@ -712,12 +708,12 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
     for(auto & mesh : m_meshes)
     {
-        for(auto & poly : mesh->_polylists)
+        for(auto & poly : mesh->m_polylists)
         {
             InternalData::SubMesh sub_poly;
-            sub_poly.material = poly._mat_id;
+            sub_poly.material = poly.m_mat_id;
 
-            for(auto & indx : poly._indices)
+            for(auto & indx : poly.m_indices)
             {
                 CurrVertexData vd;
                 bool           found;
@@ -726,48 +722,48 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
 
                 for(unsigned int j = 0; j < indx.size(); ++j)
                 {
-                    if(j < mesh->_vertices._sources_vec3.size())
+                    if(j < mesh->m_vertices.m_sources_vec3.size())
                     {
-                        switch(mesh->_vertices._sources_vec3[j]._semantic)
+                        switch(mesh->m_vertices.m_sources_vec3[j].m_semantic)
                         {
                             case VertexData::Semantic::POSITION:
                                 {
-                                    vd.pos    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    vd.pos    = mesh->m_vertices.m_sources_vec3[j].m_data[indx[j]];
                                     pos_index = indx[j];
                                     break;
                                 }
                             case VertexData::Semantic::NORMAL:
                                 {
                                     vd.is_normal = true;
-                                    vd.normal    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    vd.normal    = mesh->m_vertices.m_sources_vec3[j].m_data[indx[j]];
                                     break;
                                 }
                             case VertexData::Semantic::COLOR:
                                 {
                                     vd.is_color = true;
-                                    vd.color    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    vd.color    = mesh->m_vertices.m_sources_vec3[j].m_data[indx[j]];
                                     break;
                                 }
                             case VertexData::Semantic::TANGENT:
                             case VertexData::Semantic::TEXTANGENT:
                                 {
                                     vd.is_tangent = true;
-                                    vd.tangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    vd.tangent    = mesh->m_vertices.m_sources_vec3[j].m_data[indx[j]];
                                     break;
                                 }
                             case VertexData::Semantic::BINORMAL:
                             case VertexData::Semantic::TEXBINORMAL:
                                 {
                                     vd.is_bitangent = true;
-                                    vd.bitangent    = mesh->_vertices._sources_vec3[j]._data[indx[j]];
+                                    vd.bitangent    = mesh->m_vertices.m_sources_vec3[j].m_data[indx[j]];
                                     break;
                                 }
                         }
                     }
                     else
                     {
-                        unsigned int t   = j - mesh->_vertices._sources_vec3.size();
-                        glm::vec2    tex = mesh->_vertices._sources_vec2[t]._data[indx[j]];
+                        unsigned int t   = j - mesh->m_vertices.m_sources_vec3.size();
+                        glm::vec2    tex = mesh->m_vertices.m_sources_vec2[t].m_data[indx[j]];
                         vd.tex_coords.push_back(tex);
                     }
                 }
@@ -780,8 +776,8 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 else
                 {
                     PushVertexData(sub_poly, vd);
-                    if(!mesh->_vertices._wght.empty())   // for skinned mesh
-                        sub_poly.weights.push_back(GetWeightsForVertex(mesh->_vertices._wght[pos_index]));
+                    if(!mesh->m_vertices.m_wght.empty())   // for skinned mesh
+                        sub_poly.weights.push_back(GetWeightsForVertex(mesh->m_vertices.m_wght[pos_index]));
 
                     unsigned int new_index = sub_poly.pos.size() - 1;
                     sub_poly.indexes.push_back(new_index);
@@ -802,14 +798,14 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
         {
             InternalData::JointNode ex_joint;
 
-            ex_joint.index        = joint->_index;
-            ex_joint.name         = joint->_dae_node->_name;
-            ex_joint.inverse_bind = joint->_inv_bind_mat;
+            ex_joint.index        = joint->m_index;
+            ex_joint.name         = joint->m_dae_node->_name;
+            ex_joint.inverse_bind = joint->m_inv_bind_mat;
 
-            if(joint->_parent != nullptr)
+            if(joint->m_parent != nullptr)
             {
-                JointNode const * parent = dynamic_cast<JointNode const *>(joint->_parent);
-                ex_joint.parent          = parent->_index;
+                JointNode const * parent = dynamic_cast<JointNode const *>(joint->m_parent);
+                ex_joint.parent          = parent->m_index;
             }
             else
             {
@@ -831,7 +827,7 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                 for(uint16_t i = 0; i < m_frame_count; i++)
                 {
                     // relative skinning matrices
-                    glm::mat4 rel = joint->_r_frames[i];
+                    glm::mat4 rel = joint->m_r_frames[i];
                     glm::quat rot = glm::quat_cast(rel);
                     rot           = glm::normalize(rot);
                     ex_joint.r_rot.push_back(rot);
@@ -840,13 +836,12 @@ void DaeConverter::ExportToInternal(InternalData & rep, CmdLineOptions const & c
                     ex_joint.r_trans.push_back(glm::vec3(transf));
 
                     // absolute matrices
-                    glm::mat4 abs          = joint->_a_frames[i];
-                    glm::mat4 joint_transf = abs;
-                    rot                    = glm::quat_cast(joint_transf);
-                    rot                    = glm::normalize(rot);
+                    glm::mat4 abs = joint->m_a_frames[i] * joint->m_inv_bind_mat;
+                    rot           = glm::quat_cast(abs);
+                    rot           = glm::normalize(rot);
                     ex_joint.a_rot.push_back(rot);
 
-                    transf = glm::column(joint_transf, 3);
+                    transf = glm::column(abs, 3);
                     ex_joint.a_trans.push_back(glm::vec3(transf));
                 }
             }
