@@ -549,7 +549,7 @@ void DaeConverter::ProcessMeshes()
             for(auto & mesh : geometry->_tri_groups)
             {
                 auto & inp = geometry->_tri_groups[0]._meshes[0]._attributes;
-                for(auto & poly : mesh._meshes)
+                for(auto const & poly : mesh._meshes)
                 {
                     assert(poly._triangles[0].size() == inp.size());
 
@@ -568,7 +568,7 @@ void DaeConverter::ProcessMeshes()
                     }
 
                     // copy index
-                    for(auto & tri : poly._triangles)
+                    for(auto const & tri : poly._triangles)
                     {
                         TriGroup::VertexAttribut index;
 
